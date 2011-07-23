@@ -1,1 +1,6 @@
-_build/
+_build/*
+_properties/*
+build.xml
+.idea/*
+sites/default/files/*
+sites/default/setttings.php
