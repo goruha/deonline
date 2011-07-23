@@ -1,0 +1,52 @@
+<?php
+// $Id: resources.test,v 1.1 2009/07/27 14:14:07 osoh Exp $
+
+include_once(dirname(__FILE__) . '/classroom.test');
+
+class ClassroomResourcesTestCase extends ClassroomTestCase {
+  var $course;
+
+  public static function getInfo() {
+    return array(
+      'name' => t('Resources functions'),
+      'desc' => t('Tests for resources related functions.'),
+      'group' => t('Classroom tests'),
+    );
+  }
+
+  function setup() {
+    parent::setUp();
+    $course_type = $this->drupalCreateContentType();
+    $this->course = $this->createClassroomNode('course', 'Course #1');
+    $this->setTypesFor('course', array($course_type->type));
+    $resource_type = $this->drupalCreateContentType();
+    $this->resource = $this->createClassroomNode('resource', 'Resource #1');
+    $this->setTypesFor('resource', array($resource_type->type));
+  }
+
+  function testAddResources() {
+    $resources = classroom_get_resources_for($this->course);
+    $this->assertEqual(count($resources), 0);
+    $this->assertTrue(classroom_add_resource($this->course, $this->resource));
+    $resources = classroom_get_resources_for($this->course);
+    $this->assertEqual($this->resource->nid, $resources[0]->nid);
+    $this->assertEqual(count($resources), 1);
+  }
+
+  function testBogusData() {
+    $bogus_resource = array('bogus' => 'resource');
+    $bogus_course = array('bogus' => 'course');
+    $this->assertFalse(classroom_add_resource($this->course, $bogus_resource));
+    $this->assertFalse(classroom_add_resource($bogus_course, $this->resource));
+    $this->assertFalse(classroom_add_resource($bogus_course, $bogus_resource));
+  }
+
+  function testRemoveFromCourse() {
+    $this->assertTrue(classroom_add_resource($this->course, $this->resource));
+    $resources = classroom_get_resources_for($this->course);
+    $this->assertEqual(count($resources), 1);
+    $this->assertTrue(classroom_remove_resource_from($this->course, $this->resource));
+    $resources = classroom_get_resources_for($this->course);
+    $this->assertEqual(count($resources), 0);
+  }
+}

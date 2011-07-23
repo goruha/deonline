@@ -1,0 +1,172 @@
+<?php
+// $Id: admin.test,v 1.5 2009/12/21 13:02:09 osoh Exp $
+
+class ClassroomAdminTestCase extends ClassroomTestCase {
+  public static function getInfo() {
+    return array(
+      'name' => t('Admin functions'),
+      'desc' => t('Test for administration interface.'),
+      'group' => t('Classroom tests'),
+    );
+  }
+
+  function setUp($modules = null) {
+    parent::setUp($modules);
+    $this->admin = $this->createAdmin(array());
+    $this->courseType = $this->drupalCreateContentType(array(
+      'type' => 'course',
+      'name' => 'course'));
+    $this->assignmentType = $this->drupalCreateContentType(array(
+      'type' => 'assignment',
+      'name' => 'assignment'));
+    $this->responseType = $this->drupalCreateContentType(array(
+      'type' => 'response',
+      'name' => 'response'));
+    $this->resourceType = $this->drupalCreateContentType(array(
+      'type' => 'resource',
+      'name' => 'resource'));
+  }
+
+  /**
+   * Method to check the types don't overlap for classroom elements
+   */
+  function testAssignTypesOverlapped() {
+    $this->loginUser($this->admin);
+    
+    //Assign course type to  course
+    $edit = array ('classroom_course_types[course]' => 'course');
+    $content = $this->drupalPost('admin/settings/classroom', $edit, t('Save configuration'),array());
+    $course_types = variable_get('classroom_course_types',array());
+    $this->assertEqual($course_types['course'], 'course', 'The type course is assigned to course');
+    $this->assertEqual($course_types['assignment'], 0, 'The type assignment is not assigned to course');
+    $this->assertEqual($course_types['page'], 0, 'The type page is not assigned to course');
+    $this->assertEqual($course_types['resource'], 0, 'The type resource is not assigned to course');
+    $this->assertEqual($course_types['response'], 0, 'The type response is not assigned to course');
+    $this->assertEqual($course_types['story'], 0, 'The type story is not assigned to course');
+
+    //Assign course type to resources (this is not allowed)
+    $edit = array ('classroom_resource_types[course]' => 'course');   
+    $content = $this->drupalPost('admin/settings/classroom/resources', $edit, t('Save configuration'),array());
+    $resource_types = variable_get('classroom_resource_types',array());
+    $this->assertText(t('Cannot overlap the types for the elements of Classroom module'));
+    $this->assertEqual($resource_types, array(),'Resource types is empty');
+
+
+    //Assign resource type to resource
+    $edit = array ('classroom_resource_types[resource]' => 'resource');
+    $content = $this->drupalPost('admin/settings/classroom/resources', $edit, t('Save configuration'),array());
+    $resource_types = variable_get('classroom_resource_types',array());
+    $this->assertEqual($resource_types['course'], 0, 'The type course is assigned to resource');
+    $this->assertEqual($resource_types['assignment'], 0, 'The type assignment is not assigned to resource');
+    $this->assertEqual($resource_types['page'], 0, 'The type page is not assigned to resource');
+    $this->assertEqual($resource_types['resource'], 'resource', 'The type resource is assigned to resource');
+    $this->assertEqual($resource_types['response'], 0, 'The type response is not assigned to resource');
+    $this->assertEqual($resource_types['story'], 0, 'The type story is not assigned to resource');
+
+    //Assign resource type to responses (this is not allowed)
+    $edit = array ('classroom_response_types' => 'resource');   
+    $content = $this->drupalPost('admin/settings/classroom/responses', $edit, t('Save configuration'),array());
+    $response_types = variable_get('classroom_response_types',array());
+    $this->assertText(t('Cannot overlap the types for the elements of Classroom module'));
+    $this->assertEqual($response_types, array(), 'Response types is empty');
+
+    //Assign response type to responses
+    $edit = array ('classroom_response_types' => 'response');
+    $content = $this->drupalPost('admin/settings/classroom/responses', $edit, t('Save configuration'),array());
+    $response_types = variable_get('classroom_response_types',array());
+    $this->assertEqual($response_types, 'response', 'The type response is assigned to response');
+
+    //Assign response type to assignments (this is not allowed)
+    $edit = array ('classroom_assignment_types[response]' => 'response');   
+    $content = $this->drupalPost('admin/settings/classroom/assignments', $edit, t('Save configuration'),array());
+    $assignment_types = variable_get('classroom_assignments_types',array());
+    $this->assertText(t('Cannot overlap the types for the elements of Classroom module'));
+    $this->assertEqual($assignment_types, array(), 'Assignment types is empty');
+
+    //Assign assignment type to assignment
+    $edit = array ('classroom_assignment_types[assignment]' => 'assignment');
+    $content = $this->drupalPost('admin/settings/classroom/assignments', $edit, t('Save configuration'),array());
+    $assignment_types = variable_get('classroom_assignment_types',array());
+    $this->assertEqual($assignment_types['course'], 0, 'The type course is assigned to assignment');
+    $this->assertEqual($assignment_types['assignment'], 'assignment', 'The type assignment is assigned to assignment');
+    $this->assertEqual($assignment_types['page'], 0, 'The type page is not assigned to assignment');
+    $this->assertEqual($assignment_types['resource'], 0, 'The type resource is not assigned to assignment');
+    $this->assertEqual($assignment_types['response'], 0, 'The type response is not assigned to assignment');
+    $this->assertEqual($assignment_types['story'], 0, 'The type story is not assigned to assignment'); 
+  
+    //Assign assignment type to course (this is not allowed)
+    $edit = array ('classroom_course_types[response]' => 'response');   
+    $content = $this->drupalPost('admin/settings/classroom', $edit, t('Save configuration'),array());
+    $courses_types = variable_get('classroom_courses_types',array());
+    $this->assertText(t('Cannot overlap the types for the elements of Classroom module'));
+  
+  }
+
+  function testAdjustPermissions() {
+    $types = array('course', 'assignment', 'resource', 'response');
+    foreach ($types as $type) {
+      $this->setTypesFor($type, array($type));
+    }
+    $this->loginUser($this->admin);
+
+    //
+    // Adjust permissions
+    //
+    $students_rid = (int) $this->createRole();
+    $teachers_rid = (int) $this->createRole();
+    // Initial perms (they're the same for both roles).
+    $initial_perms = $this->getPermissions($students_rid);
+
+    $edit = array(
+      'classroom_students_role' => $students_rid,
+      'classroom_teachers_role' => $teachers_rid,
+    );
+
+    $content = $this->drupalPost('admin/settings/classroom/roles', $edit,
+      t('Adjust permissions'), array());
+    $this->assertNoErrorMessages();
+    $students_perms = $this->getPermissions($students_rid);
+    $this->assertEqual(count($students_perms), count($initial_perms) + 4);
+    $teachers_perms = $this->getPermissions($teachers_rid);
+    $this->assertEqual(count($teachers_perms), count($initial_perms) + 7);
+
+    //
+    // Change roles
+    //
+    $new_students_rid = (int) $this->createRole();
+    $new_teachers_rid = (int) $this->createRole();
+    $edit = array(
+      'classroom_students_role' => $new_students_rid,
+      'classroom_teachers_role' => $new_teachers_rid,
+    );
+    $content = $this->drupalPost('admin/settings/classroom/roles', $edit,
+      t('Adjust permissions'), array());
+
+    // Check if permissions were unassigned
+    $students_perms = $this->getPermissions($students_rid);
+    $this->assertEqual($students_perms, $initial_perms);
+    $teachers_perms = $this->getPermissions($teachers_rid);
+    $this->assertEqual($teachers_perms, $initial_perms);
+
+    // Check if permissions are assigned to new roles
+    $students_perms = $this->getPermissions($new_students_rid);
+    $this->assertEqual(count($students_perms), count($initial_perms) + 4);
+    $teachers_perms = $this->getPermissions($new_teachers_rid);
+    $this->assertEqual(count($teachers_perms), count($initial_perms) + 7);
+
+    //
+    // Change some classroom type
+    //
+    $this->assertTrue(in_array('create assignment content', $teachers_perms));
+    $this->setupContentType('assignment', 'task');
+
+    $content = $this->drupalPost('admin/settings/classroom/roles', $edit,
+      t('Adjust permissions'), array());
+
+    // Check if permissions are assigned to new roles
+    $teachers_perms = $this->getPermissions($new_teachers_rid);
+    $this->assertTrue(in_array('create task content', $teachers_perms));
+    $this->assertFalse(in_array('create assignment content', $teachers_perms));
+  }
+
+}

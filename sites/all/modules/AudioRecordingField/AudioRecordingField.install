@@ -1,0 +1,34 @@
+<?php
+//$id
+/**
+ * Implementation of hook_install().
+ */
+function audioRecordingField_install() {
+  content_notify('install', 'audioRecordingField');
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function audioRecordingField_uninstall() {
+  content_notify('uninstall', 'audioRecordingField');
+}
+
+/**
+ * Implementation of hook_enable().
+ *
+ * Notify content module when this module is enabled.
+ */
+function audioRecordingField_enable() {
+    watchdog('testing','enable');
+  content_notify('enable', 'audioRecordingField');
+}
+
+/**
+ * Implementation of hook_disable().
+ *
+ * Notify content module when this module is disabled.
+ */
+function audioRecordingField_disable() {
+  content_notify('disable', 'audioRecordingField');
+}

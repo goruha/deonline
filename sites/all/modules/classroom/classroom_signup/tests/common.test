@@ -1,0 +1,50 @@
+<?php
+// $Id: common.test,v 1.1 2009/07/27 14:14:06 osoh Exp $
+
+include_once(dirname(__FILE__) .'/classroom_signup.test');
+include_once(dirname(__FILE__) .'/../classroom_signup.common.inc');
+
+class ClassroomSignupCommonTestCase extends ClassroomSignupTestCase {
+
+  public static function getInfo() {
+    return array(
+      'name' => t('Classroom signup common functions'),
+      'desc' => t('Tests for signup requests management common functions'),
+      'group' => t('Classroom tests'),
+    );
+  }
+
+  function testCreateRequest() {
+    $result = classroom_signup_request($this->student, $this->course);
+    $request = classroom_signup_get_request($this->student, $this->course);
+    $this->assertTrue($request);
+  }
+
+  function testCreateRequestTwice() {
+    $result = classroom_signup_request($this->student, $this->course);
+    $this->assertTrue($result);
+    $result = classroom_signup_request($this->student, $this->course);
+    $this->assertFalse($result);
+  }
+
+  function testGetRequestByRID() {
+    classroom_signup_request($this->student, $this->course);
+    $req1 = classroom_signup_get_request($this->student, $this->course);
+    $req2 = classroom_signup_get_request_by_rid($req1->rid);
+    $this->assertEqual($req1, $req2);
+  }
+
+  function testAcceptRequest() {
+    $req = classroom_signup_request($this->student, $this->course);
+    classroom_signup_accept_request($req);
+    $this->assertTrue(classroom_is_student($this->student, $this->course));
+    $this->assertEqual($req->status, CLASSROOM_SIGNUP_STATUS_ACCEPTED);
+  }
+
+  function testRejectRequest() {
+    $req = classroom_signup_request($this->student, $this->course);
+    classroom_signup_reject_request($req);
+    $this->assertFalse(classroom_is_student($this->student, $this->course));
+    $this->assertEqual($req->status, CLASSROOM_SIGNUP_STATUS_REJECTED);
+  }
+}

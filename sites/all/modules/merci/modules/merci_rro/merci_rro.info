@@ -1,0 +1,12 @@
+
+name = MERCI Role Rule Override
+package = MERCI
+description = "Allows overriding of MERCI checkout rules for users with specific roles"
+core = 6.x
+dependencies[] = merci
+; Information added by drupal.org packaging script on 2011-03-12
+version = "6.x-2.0-beta11"
+core = "6.x"
+project = "merci"
+datestamp = "1299937269"
+

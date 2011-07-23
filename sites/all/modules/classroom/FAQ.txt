@@ -1,0 +1,51 @@
+$Id
+
+Frequently Asked Questions
+
+This is a minimal FAQ which is taken from support request http://drupal.org/node/730780.
+Thanks to drm and Nick Fedchik for their questions.
+
+1. How to setup permissions
+
+Classroom can setup permissions for you. After selecting which node types will
+be used as 'Courses', 'Assignments', 'Resources' and 'Responses', go to 'Roles
+and permissions', select roles and click 'Adjust permissions'.
+
+Anyway, you can read more about permissions in INSTALL.txt.
+
+2. How to setup assignments?
+
+You can have different types of assignments. For example, a plain Drupal node
+could be an assignment: you can use that node to present the assignment (using
+the body or an attachment). The students could complete that assignment and you
+can grade the response.
+
+But if you use classroom_quiz, you could use a quiz (from Quiz module) as
+assignment. In that case, the response's grade will be calculated automatically
+(although you can change it).
+
+3. How to setup blocks visibility for each role?
+
+You have three blocks: 'My courses', 'My assignments' and 'Topics'. If a user
+is subscribed to any course, the 'My courses' block won't be displayed. The
+same applies to 'My assignments' block.
+
+The 'Topics' block it's only shown when you're into the 'classroom'.
+
+4. Can I grade students using polls?
+
+No, you can't. But you can use a quiz if you enable the classroom_quiz module
+(provided with Classroom). Anyway, it's posible to writ a module to extend
+Classroom so you can use polls as assignments.
+
+5. How do students apply for a course?
+
+If you use classroom_signup module (bundled with Classroom), students could visit
+the Classroom main page (http://www.example.com/?q=classroom and apply for
+a course clicking on the 'Sign up' link.
+
+The course's manager could then accept or deny this sign up request.
+
+And that's all! I hope it helps.
+
+Thank you for trying Classroom!

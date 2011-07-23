@@ -1,0 +1,127 @@
+<?php
+// $Id: classroom_signup.module,v 1.9 2010/01/13 09:54:15 osoh Exp $
+
+define('CLASSROOM_SIGNUP_STATUS_PENDING', 0);
+define('CLASSROOM_SIGNUP_STATUS_REJECTED', 1);
+define('CLASSROOM_SIGNUP_STATUS_ACCEPTED', 2);
+
+/**
+ * Implementation of hook_init().
+ */
+function classroom_signup_init() {
+  module_load_include('inc', 'classroom_signup', 'classroom_signup.common');
+  module_load_include('inc', 'classroom_signup', 'classroom_signup.mail');
+  module_load_include('inc', 'classroom_signup', 'classroom_signup.pages');
+}
+
+/**
+ * Implementation of hook_menu().
+ */
+function classroom_signup_menu() {
+  $items = array();
+
+  $items['classroom/course/%/students/pending'] = array(
+    'title' => 'Pending',
+    'description' => 'Sign up pending requests list',
+    'page callback' => 'classroom_signup_requests_page',
+    'page arguments' => array(2, 'pending'),
+    'access callback' => 'classroom_check_access',
+    'access arguments' => array(2, CLASSROOM_MANAGER_STRING),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 6,
+    'file' => 'classroom_signup.pages.inc',
+  );
+
+  $items['classroom/course/%/students/accepted'] = array(
+    'title' => 'Accepted',
+    'description' => 'Sign up accepted requests list',
+    'page callback' => 'classroom_signup_requests_page',
+    'page arguments' => array(2, 'accepted'),
+    'access callback' => 'classroom_check_access',
+    'access arguments' => array(2, CLASSROOM_MANAGER_STRING),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 7,
+    'file' => 'classroom_signup.pages.inc',
+  );
+
+  $items['classroom/course/%/students/rejected'] = array(
+    'title' => 'Rejected',
+    'description' => 'Sign up rejected requests list',
+    'page callback' => 'classroom_signup_requests_page',
+    'page arguments' => array(2, 'rejected'),
+    'access callback' => 'classroom_check_access',
+    'access arguments' => array(2, CLASSROOM_MANAGER_STRING),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 7,
+    'file' => 'classroom_signup.pages.inc',
+  );
+
+  $items['classroom/course/%/request/%/answer'] = array(
+    'title' => 'Answer request',
+    'description' => 'Answer a sign up request',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('classroom_signup_answer_form', 4),
+    'access callback' => 'classroom_check_access',
+    'access arguments' => array(2, CLASSROOM_MANAGER_STRING),
+    'type' => MENU_CALLBACK,
+    'weight' => 1,
+    'file' => 'classroom_signup.pages.inc',
+  );
+
+  $items['classroom/course/%/students/request/%/view'] = array(
+    'title' => 'View request',
+    'description' => 'View a sign up request',
+    'page callback' => 'classroom_signup_request_page',
+    'page arguments' => array(5),
+    'access callback' => 'classroom_check_access',
+    'access arguments' => array(2, CLASSROOM_MANAGER_STRING),
+    'type' => MENU_CALLBACK,
+    'weight' => 1,
+    'file' => 'classroom_signup.pages.inc',
+  );
+
+  $items['classroom/course/%/request/new'] = array(
+    'title' => 'Request sign up',
+    'description' => 'Request sign up in a course',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('classroom_signup_request_form', 2),
+    // FIXME: Check that user is authenticated.
+    'access arguments' => array('access classroom'),
+    'type' => MENU_CALLBACK,
+    'weight' => 1,
+    'file' => 'classroom_signup.pages.inc',
+  );
+
+  return $items;
+}
+
+/**
+ * Implementation of hook_classroom_course_links().
+ */
+function classroom_signup_classroom_course_links($course, $user = NULL) {
+  if (!isset($user)) {
+    global $user;
+  }
+
+  if (!(classroom_signup_get_request($user, $course) or classroom_is_user_registered($user, $course))) {
+    if($user->uid == 0) {
+      return array(
+        'classroom_signup' => array(
+          array(
+            'title' => t('Login'),
+            'href' => "user"),
+        ),
+      );
+    } else {
+      return array(
+        'classroom_signup' => array(
+          array(
+            'title' => t('Sign up'),
+            'href' => "classroom/course/$course->nid/request/new"),
+        ),
+      );
+    }
+  } else {
+    return false;
+  }
+}

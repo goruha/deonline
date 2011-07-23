@@ -1,0 +1,129 @@
+<?php
+// $Id: classroomquiz.test,v 1.4 2010/07/14 21:47:59 osoh Exp $
+
+include_once(dirname(__FILE__) . '/../../tests/assignments.test');
+
+class ClassroomQuizTestCase extends ClassroomAssignmentsTestCase {
+
+
+  public static function getInfo() {
+    return array(
+      'name' => t('Classroom quiz functions'),
+      'desc' => t('Tests for quiz integration'),
+      'group' => t('ClassroomQuiz tests'),
+    );
+  }
+
+  function setUp($modules = NULL) {
+    parent::setUp( array('quiz',
+      'multichoice',
+      'classroomquiz'));
+    
+    $this->setTypesFor('assignment', array(
+      'quiz', $this->assignmentType->type));
+
+    $perms = array(
+      'access quiz',
+      'administer quiz',
+      'administer quiz configuration',
+      'create quiz',
+      'delete any quiz',
+      'edit any quiz',
+      'view user results',
+      'allow any number of answers',
+      'allow feedback',
+      'allow multiple correct answers',
+      'allow user titles',
+      'create multichoice',
+      'delete any multichoice',
+      'edit any multichoice');
+     
+
+    $this->teacher2 = $this->createTeacher($perms);
+
+    classroom_register_teacher($this->teacher2, $this->course_without_grade);
+    classroom_register_student($this->student, $this->course_without_grade);
+
+  }
+
+  /**
+   * Create a multichoice question
+   */
+  function CreateMultichoice() {
+    $this->loginUser($this->teacher2);
+
+    //Create Multichoice
+    $edit = array(
+      'title' => 'Multichoice #1',
+      'body' => 'What\'s the colour of the Santiago\'s white horse?',
+      'answers[0][answer]' => 'White',
+      'answers[0][correct]' => True,
+      'answers[1][answer]' => 'Green',
+      'answers[2][answer]' => 'Blue',
+      'answers[3][answer]' => 'Yellow');
+
+    $content = $this->drupalPost('node/add/multichoice',$edit, t('Save'));
+    $multichoice = $this->drupalGetNodeByTitle('Multichoice #1');
+    return $multichoice;
+  }
+
+  /**
+   * Create quiz
+   */
+  function CreateQuiz() {
+    $this->loginUser($this->teacher2);
+
+    //Create Quiz
+    $end_date = $this->course_without_grade->classroom_course['start_t'];
+
+    $edit = array(
+      'title' => 'Quiz #1',
+      'body'  => 'Body for quiz #1',
+      'classroom_assignment[max_grade]' => 10);
+
+    $data = getdate($end_date);
+    $edit += array(
+      'quiz_close[day]' => ($data['mday']+1),
+      'quiz_close[month]' => $data['mon'],
+      'quiz_close[year]' => $data['year'],
+    );
+    $content = $this->drupalPost('node/add/quiz', $edit, t('Save'), 
+    array('query' => 'course_nid='.$this->course_without_grade->nid));
+    $quiz = $this->drupalGetNodeByTitle('Quiz #1');
+    return $quiz;
+  }
+
+  /**
+   * Test create quiz with questions
+   */
+  function testCreateQuizWithQuestions() {
+    $this->loginUser($this->teacher2);
+    $quiz = $this->CreateQuiz();
+    $this->assertTrue(is_object($quiz));
+
+    $multichoice = $this->CreateMultichoice();
+    $this->assertTrue(is_object($multichoice));
+
+     //Assign Multichoice to quiz
+    $this->assertTrue( quiz_set_questions($quiz, array($multichoice)));
+
+    $content = $this->drupalGet('node/'.$quiz->nid);
+  }
+
+  /**
+   * Test answer a quiz
+   */
+  function testCreateQuizResponse() {
+    $this->loginUser($this->teacher2);
+
+    $quiz = $this->CreateQuiz();
+    $multichoice = $this->CreateMultichoice();
+    quiz_set_questions($quiz, array($multichoice));
+    $edit=array();
+    $content = $this->drupalGet('node/'.$quiz->nid);
+    //TODO:TO BE FINISHED
+    //    $edit = array('multichoice-render-question-form[tries]'=>'13');
+    // $content = $this->drupalPost('node/'.$quiz->nid, $edit, t('Next'),array());
+  }
+
+}

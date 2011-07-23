@@ -1,0 +1,15 @@
+; $Id: classroomquiz.info,v 1.2 2009/09/10 11:41:27 osoh Exp $
+name = Classroom Quiz
+description = Classroom - quiz integration module
+core = 6.x
+
+; dependencies
+dependencies[] = quiz
+dependencies[] = classroom
+
+; Information added by drupal.org packaging script on 2010-07-14
+version = "6.x-1.1"
+core = "6.x"
+project = "classroom"
+datestamp = "1279147207"
+

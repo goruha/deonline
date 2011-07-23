@@ -1,0 +1,31 @@
+# $Id: classroom_forum.es.po,v 1.4 2010/01/12 14:40:30 osoh Exp $
+#
+# Spanish translation of Drupal (classroom_forum)
+# Copyright 2010 Banot.net <info@banot.net>
+# Generated from files:
+#  classroom_forum/classroom_forum.module: n/a
+#  classroom_forum/classroom_forum.info: n/a
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"POT-Creation-Date: 2010-01-12 14:08+0000\n"
+"PO-Revision-Date: YYYY-mm-DD HH:MM+ZZZZ\n"
+"Last-Translator: Imobach González Sosa <imobachgs@banot.net>\n"
+"Language-Team: Spanish <info@banot.net>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: classroom_forum/classroom_forum.module:87;10;11
+msgid "Forum"
+msgstr "Foro"
+
+#: classroom_forum/classroom_forum.info:0
+msgid "Classroom forum"
+msgstr ""
+
+#: classroom_forum/classroom_forum.info:0
+msgid "Provides classroom integration with forum core module"
+msgstr "Ofrece integración de Classroom con el módulo Forum"

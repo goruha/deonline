@@ -1,0 +1,71 @@
+<?php
+// $Id: topics.test,v 1.3 2009/12/24 08:53:12 osoh Exp $
+
+include_once(dirname(__FILE__) .'/classroom.test');
+
+class ClassroomTopicsTestCase extends ClassroomTestCase {
+  var $course;
+
+  public static function getInfo() {
+    return array(
+      'name' => t('Topics tests'),
+      'desc' => t('Topics functions.'),
+      'group' => t('Classroom tests'),
+    );
+  }
+
+  function setUp() {
+    parent::setUp();
+    $this->setupContentType('course');
+    $this->course = $this->createClassroomNode('course', 'Course #1');
+  }
+
+  function testCreateTopic() {
+    $topics = classroom_get_topics($this->course);
+    $this->assertTrue(empty($topics));
+    $topic = classroom_new_topic(array('course' => $this->course, 'name' => 'Topic #1'));
+    classroom_save_topic($topic);
+    $topics = classroom_get_topics($this->course);
+    $this->assertFalse(empty($topics));
+    $this->assertEqual($topics[0]->name, $topic->name);
+    $this->assertEqual($topics[0]->tid, $topic->tid);
+  }
+
+  function testSaveLoadTopic() {
+    $data = array(
+      'course' => $this->course,
+      'name' => 'Topic #1',
+      'description' => 'Just a description',
+      'number' => '1',
+    );
+
+    $topic = classroom_new_topic($data);
+    classroom_save_topic($topic);
+    $loaded_topic = classroom_load_topic($topic->tid);
+    $this->assertEqual($topic->name, $loaded_topic->name);
+    $this->assertEqual($topic->description, $loaded_topic->description);
+    $this->assertEqual($topic->number, $loaded_topic->number);
+    $this->assertEqual($topic->tid, $loaded_topic->tid);
+    $this->assertEqual($topic->course->nid, $loaded_topic->course->nid);
+  }
+
+  function testChangeExistingTopic() {
+    $topic = classroom_new_topic(array('course' => $this->course, 'name' => 'Topic #1'));
+    classroom_save_topic($topic);
+    $topic->name = 'Topic 1';
+    classroom_save_topic($topic);
+    $topic = classroom_load_topic($topic->tid);
+    $this->assertEqual('Topic 1', $topic->name);
+  }
+
+  function testDeleteTopic() {
+    $topic = classroom_new_topic(array('course' => $this->course, 'name' => 'Topic #1'));
+    classroom_save_topic($topic);
+    $topics = classroom_get_topics($this->course);
+    $this->assertTrue(!empty($topics));
+
+    classroom_delete_topic($topic);
+    $topics = classroom_get_topics($this->course);
+    $this->assertTrue(empty($topics));
+  }
+}

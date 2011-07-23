@@ -1,0 +1,8 @@
+$Id
+
+We want to thank people who have contributed code to the module:
+
+* Anatoly Belyaev (cross), http://drupal.org/user/639442
+* laserlight, http://drupal.org/user/638644
+
+If you think that your name must be in this list, let us know.

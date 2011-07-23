@@ -1,0 +1,144 @@
+<?php
+// $Id: common.test,v 1.3 2010/03/16 19:52:37 osoh Exp $
+
+include_once(dirname(__FILE__) .'/classroom.test');
+
+class ClassroomCommonTestCase extends ClassroomTestCase {
+
+  public static function getInfo() {
+    return array(
+      'name' => t('Common functions'),
+      'desc' => t('Tests for common functions.'),
+      'group' => t('Classroom tests'),
+    );
+  }
+
+  function testGetTypesFor() {
+    // Initially it must be empty
+    $types = _classroom_get_types_for('course');
+    $this->assertTrue(empty($types));
+
+    // Stories can be used as course. Pages no.
+    $this->setTypesFor('course', array('story'), array('page'));
+    $types = _classroom_get_types_for('course');
+    $this->assertEqual(1, count($types));
+    $this->assertTrue(isset($types['story']));
+  }
+
+  function testIsType() {
+    // Initially, stories can't be used as courses.
+    $this->assertFalse(_classroom_is_type('story', 'course'));
+
+    // Stories can be used as course. Pages no.
+    $this->setTypesFor('course', array('story'), array('page'));
+    $this->assertTrue(_classroom_is_type('story', 'course'));
+    $this->assertFalse(_classroom_is_type('page', 'course'));
+  }
+
+  function testTimestampToFormDate() {
+    //Test that null return null
+    $this->assertNull(_classroom_timestamp_to_form_date(null));
+
+    //Test with actual date
+    $now = time();
+    $date = _classroom_timestamp_to_form_date($now);
+
+    $this->assertEqual($date['day'], (int)strftime('%d', $now),'Day is equal');
+    $this->assertEqual($date['month'],(int)strftime('%m',$now),'Month is equal');
+    $this->assertEqual($date['year'],(int)strftime('%Y',$now),'Year is equal');
+  }
+
+  function testFormatDate() {
+    $date = time();
+    $fmt_date = _classroom_format_date($date);
+    $this->assertEqual($fmt_date, format_date($date, 'small'));
+    $fmt_date = _classroom_format_date(null);
+    $this->assertEqual($fmt_date, t('---'));
+  }
+
+  function testGetCourseForCourse() {
+    $this->setupContentType('course');
+    $course = $this->createClassroomNode('course', 'Course #1');
+    $course_for = classroom_get_course_for($course);
+    $this->assertEqual($course_for->nid, $course->nid);
+  }
+
+  function testGetCourseForAssignmentWithCourse() {
+    $this->setupContentType('course');
+    $this->setupContentType('assignment');
+    $course = $this->createClassroomNode('course', 'Course #1');
+    $assignment = $this->createClassroomNode('assignment', 'Assignment #1');
+    $assignment->classroom_assignment['course_nid'] = $course->nid;
+    node_save($assignment);
+
+    $course_for = classroom_get_course_for($assignment);
+    $this->assertEqual($course_for->nid, $course->nid);
+  }
+
+  function testGetCourseForAssignmentWithoutCourse() {
+    $this->setupContentType('assignment');
+    $assignment = $this->createClassroomNode('assignment', 'Assignment #1');
+    $course_for = classroom_get_course_for($assignment);
+    $this->assertFalse($course_for);
+  }
+
+  function testGetCourseForResponse() {
+    $this->setupContentType('course');
+    $this->setupContentType('assignment');
+    $this->setupContentType('response');
+    $course = $this->createClassroomNode('course', 'Course #1');
+    $assignment = $this->createClassroomNode('assignment', 'Assignment #1');
+    $assignment->classroom_assignment['course_nid'] = $course->nid;
+    node_save($assignment);
+    $response = $this->createClassroomNode('response', 'Response #1');
+    $response->classroom_response['assignment_nid'] = $assignment->nid;
+    node_save($response);
+    $course_for = classroom_get_course_for($response);
+    $this->assertEqual($course_for->nid, $course->nid);
+  }
+
+  function testWhatClassroomTypeIsANode() {
+    $this->setupContentType('course');
+    $this->setupContentType('assignment');
+    $this->setupContentType('response');
+
+    $course = $this->createClassroomNode('course', 'Course #1');
+    $assignment = $this->createClassroomNode('assignment', 'Assignment #1');
+    $response = $this->createClassroomNode('response', 'Response #1');
+
+    $this->assertTrue(classroom_is_course($course));
+    $this->assertTrue(classroom_is_assignment($assignment));
+    $this->assertTrue(classroom_is_response($response));
+  }
+
+  function testDateToTimestamp() {
+    $user = $this->drupalCreateUser();
+    $this->loginUser($user);
+    $date = array('month' => 12, 'day' => 31, 'year' => 1969);
+
+    // 12/31/1969 at 23:59:59 should be timestamp = -1 in GMT
+    $user->timezone = 0;
+    $timestamp = _classroom_date_to_timestamp($date);
+    $this->assertEqual($timestamp, -1);
+
+    // Should be 31/12/1969 - 22:59  GMT -1
+    $user->timezone = - 3600;
+    $str_date = format_date($timestamp);
+    $this->assertEqual($str_date, "Wed, 12/31/1969 - 22:59");
+
+    // Should be 01/01/1970 - 00:59 GMT +1
+    $user->timezone = +3600;
+    $str_date = format_date($timestamp);
+    $this->assertEqual($str_date, "Thu, 01/01/1970 - 00:59");
+
+    // 12/31/1969 at 23:59:59 GMT +1 should be timestamp = -3601 at GMT
+    $timestamp = _classroom_date_to_timestamp($date);
+    $this->assertEqual($timestamp, -3601);
+
+    // 12/31/1969 at 23:59:59 GMT -1 should be timestamp = 3599 at GMT
+    $user->timezone = -3600;
+    $timestamp = _classroom_date_to_timestamp($date);
+    $this->assertEqual($timestamp, 3599);
+  }
+
+}

@@ -1,0 +1,9 @@
+// $Id: AUTHORS.txt,v 1.4 2010/03/16 19:53:53 osoh Exp $
+
+This module is developed by Banot.net. You can find more about us in
+http://www.banot.net/.
+
+Main developers:
+
+  * Imobach González Sosa (osoh), http://drupal.org/user/2915
+  * Manolo Padrón Martínez (manolopm), http://drupal.org/user/178130

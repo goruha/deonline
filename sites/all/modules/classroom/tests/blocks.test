@@ -1,0 +1,36 @@
+<?php
+// $Id: blocks.test,v 1.1 2009/07/27 14:14:07 osoh Exp $
+
+include_once(dirname(__FILE__) . '/classroom.test');
+
+class ClassroomBlocksTestCase extends ClassroomTestCase {
+  var $course, $student;
+
+  public static function getInfo() {
+    return array(
+      'name' => t('Blocks functions'),
+      'desc' => t('Tests for blocks related functions.'),
+      'group' => t('Classroom tests'),
+    );
+  }
+
+  function setup($modules = null) {
+    parent::setUp($modules);
+    $this->setupContentType('course');
+    $this->course = $this->createClassroomNode('course', 'Course #1');
+    $this->student = $this->createStudent();
+  }
+
+  function testMyCoursesBlockWithoutCourses() {
+    $this->loginUser($this->student);
+    $content = classroom_my_courses_block($this->student);
+    $this->assertTrue(is_null($content));
+  }
+
+  function testMyCoursesBlockWithOneCourse() {
+    $this->loginUser($this->student);
+    classroom_register_student($this->student, $this->course);
+    $content = classroom_my_courses_block($this->student);
+    $this->assertTrue(preg_match('/<li /', $content));
+  }
+}

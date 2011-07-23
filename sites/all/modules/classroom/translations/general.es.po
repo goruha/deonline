@@ -1,0 +1,113 @@
+# $Id: general.es.po,v 1.5 2010/03/16 18:02:57 osoh Exp $
+#
+# Spanish translation of Drupal (classroom)
+# Copyright 2010 Banot.net <info@banot.net>
+# Generated from files:
+#  classroom.assignments.inc: n/a
+#  classroom.courses.inc: n/a
+#  classroom.pages.inc: n/a
+#  classroom.resources.inc: n/a
+#  classroom.responses.inc: n/a
+#  classroom_forum/classroom_forum.module: n/a
+#  classroom_signup/classroom_signup.pages.inc: n/a
+#  classroomquiz/classroomquiz.pages.inc: n/a
+#  classroomquiz/classroomquiz.module: n/a
+#  classroom.module: n/a
+#  classroom.views.inc: n/a
+#
+# Imobach González Sosa <imobachgs@banot.net>, 2009.
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"POT-Creation-Date: 2010-01-12 14:08+0000\n"
+"PO-Revision-Date: 2009-07-15 14:22+0100\n"
+"Last-Translator: Imobach González Sosa <imobachgs@banot.net>\n"
+"Language-Team: Spanish <info@banot.net>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: classroom.assignments.inc:90;226 classroom.pages.inc:121
+#: classroomquiz/classroomquiz.pages.inc:88
+msgid "Percentage"
+msgstr "Porcentaje"
+
+#: classroom.assignments.inc:100;215 classroomquiz/classroomquiz.pages.inc:77
+msgid "Maximum grade"
+msgstr "Nota máxima"
+
+#: classroom.assignments.inc:173 classroomquiz/classroomquiz.pages.inc:59
+msgid "Assignment details"
+msgstr "Detalles de la tarea"
+
+#: classroom.assignments.inc:453 classroomquiz/classroomquiz.module:253
+msgid "The assignment could not end after the course end"
+msgstr ""
+"El plazo para entregar la tarea no puede terminar más tarde que el curso"
+
+#: classroom.assignments.inc:468;473 classroomquiz/classroomquiz.module:258
+msgid "The end date could not be before today"
+msgstr "La fecha de finalización puede ser anterior a hoy"
+
+#: classroom.common.inc:244 classroom_forum/classroom_forum.module:34;125
+#: classroomquiz/classroomquiz.pages.inc:37
+msgid "Home"
+msgstr "Inicio"
+
+#: classroom.common.inc:245 classroom.module:70;123
+#: classroom_forum/classroom_forum.module:35;126
+#: classroomquiz/classroomquiz.pages.inc:38
+msgid "Courses"
+msgstr "Cursos"
+
+#: classroom.common.inc:253;263 classroom.pages.inc:864
+#: classroom.module:90;203 classroomquiz/classroomquiz.pages.inc:40
+msgid "Assignments"
+msgstr "Tareas"
+
+#: classroom.courses.inc:169;433 classroomquiz/classroomquiz.pages.inc:67
+msgid "End date"
+msgstr "Fecha de fin"
+
+#: classroom.pages.inc:14;182;274;583;727;979;1041;1063;1310
+#: classroom_signup/classroom_signup.pages.inc:22
+msgid "Name"
+msgstr "Nombre"
+
+#: classroom.pages.inc:469;533;1220;1259;1336;1373
+#: classroomquiz/classroomquiz.pages.inc:107
+#: classroomquiz/classroomquiz.module:197
+msgid "Title"
+msgstr "Título"
+
+#: classroom.pages.inc:728;1377 classroom.responses.inc:71;154
+#: classroomquiz/classroomquiz.pages.inc:109
+#: classroomquiz/classroomquiz.module:199
+msgid "Grade"
+msgstr "Nota"
+
+#: classroom.pages.inc:796 classroomquiz/classroomquiz.pages.inc:106
+#: classroomquiz/classroomquiz.module:196
+msgid "Student"
+msgstr "Alumno"
+
+#: classroom.responses.inc:374 classroomquiz/classroomquiz.module:396
+msgid "To answer"
+msgstr ""
+
+#: classroom.module:49;101 classroomquiz/classroomquiz.module:38
+msgid "Responses"
+msgstr "Respuestas"
+
+#: classroom.module:50 classroomquiz/classroomquiz.module:39
+msgid "Responses of an assignment"
+msgstr ""
+
+#: classroom.module:60 classroom.info:0
+msgid "Classroom"
+msgstr ""
+
+#: classroom.module:263 classroom_signup/classroom_signup.pages.inc:225
+msgid "Students"
+msgstr "Alumnos"

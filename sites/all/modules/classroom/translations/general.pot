@@ -1,0 +1,102 @@
+# $Id: general.pot,v 1.4 2010/03/16 18:02:57 osoh Exp $
+#
+# LANGUAGE translation of Drupal (general)
+# Copyright YEAR NAME <EMAIL@ADDRESS>
+# Generated from files:
+#  classroom.assignments.inc: n/a
+#  classroom.pages.inc: n/a
+#  classroomquiz/classroomquiz.pages.inc: n/a
+#  classroomquiz/classroomquiz.module: n/a
+#  classroom.common.inc: n/a
+#  classroom_forum.module,v 1.1 2009/07/27 14:14:06 osoh
+#  classroom.module: n/a
+#  classroom.courses.inc: n/a
+#  classroom_signup/classroom_signup.pages.inc: n/a
+#  classroom.responses.inc: n/a
+#  classroom.info: n/a
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"POT-Creation-Date: 2010-01-12 14:20+0000\n"
+"PO-Revision-Date: YYYY-mm-DD HH:MM+ZZZZ\n"
+"Last-Translator: NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <EMAIL@ADDRESS>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+
+#: classroom.assignments.inc:90;226 classroom.pages.inc:121 classroomquiz/classroomquiz.pages.inc:88
+msgid "Percentage"
+msgstr ""
+
+#: classroom.assignments.inc:100;215 classroomquiz/classroomquiz.pages.inc:77
+msgid "Maximum grade"
+msgstr ""
+
+#: classroom.assignments.inc:173 classroomquiz/classroomquiz.pages.inc:59
+msgid "Assignment details"
+msgstr ""
+
+#: classroom.assignments.inc:453 classroomquiz/classroomquiz.module:253
+msgid "The assignment could not end after the course end"
+msgstr ""
+
+#: classroom.assignments.inc:468;473 classroomquiz/classroomquiz.module:258
+msgid "The end date could not be before today"
+msgstr ""
+
+#: classroom.common.inc:244 classroom_forum/classroom_forum.module:34;125 classroomquiz/classroomquiz.pages.inc:37
+msgid "Home"
+msgstr ""
+
+#: classroom.common.inc:245 classroom.module:70;123 classroom_forum/classroom_forum.module:35;126 classroomquiz/classroomquiz.pages.inc:38
+msgid "Courses"
+msgstr ""
+
+#: classroom.common.inc:253;263 classroom.pages.inc:864 classroom.module:90;203 classroomquiz/classroomquiz.pages.inc:40
+msgid "Assignments"
+msgstr ""
+
+#: classroom.courses.inc:169;433 classroomquiz/classroomquiz.pages.inc:67
+msgid "End date"
+msgstr ""
+
+#: classroom.pages.inc:14;182;274;583;727;979;1041;1063;1310 classroom_signup/classroom_signup.pages.inc:22
+msgid "Name"
+msgstr ""
+
+#: classroom.pages.inc:469;533;1220;1259;1336;1373 classroomquiz/classroomquiz.pages.inc:107 classroomquiz/classroomquiz.module:197
+msgid "Title"
+msgstr ""
+
+#: classroom.pages.inc:728;1377 classroom.responses.inc:71;154 classroomquiz/classroomquiz.pages.inc:109 classroomquiz/classroomquiz.module:199
+msgid "Grade"
+msgstr ""
+
+#: classroom.pages.inc:796 classroomquiz/classroomquiz.pages.inc:106 classroomquiz/classroomquiz.module:196
+msgid "Student"
+msgstr ""
+
+#: classroom.responses.inc:374 classroomquiz/classroomquiz.module:396
+msgid "To answer"
+msgstr ""
+
+#: classroom.module:49;101 classroomquiz/classroomquiz.module:38
+msgid "Responses"
+msgstr ""
+
+#: classroom.module:50 classroomquiz/classroomquiz.module:39
+msgid "Responses of an assignment"
+msgstr ""
+
+#: classroom.module:60 classroom.info:0
+msgid "Classroom"
+msgstr ""
+
+#: classroom.module:263 classroom_signup/classroom_signup.pages.inc:225
+msgid "Students"
+msgstr ""
+

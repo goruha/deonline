@@ -1,0 +1,34 @@
+<?php
+// $Id: classroom_privatemsg.test,v 1.3 2010/07/14 21:47:58 osoh Exp $
+
+include_once(dirname(__FILE__) . '/../../tests/classroom.test');
+
+class ClassroomPrivatemsgTestCase extends ClassroomTestCase {
+  var $student;
+
+  public static function getInfo() {
+    return array(
+      'name' => t('Classroom Privatemsg functions'),
+      'desc' => t('Tests for Privatemsg integration'),
+      'group' => t('Classroom tests'),
+    );
+  }
+
+  function setUp() {
+    parent::setUp(array('privatemsg', 'classroom_privatemsg'));
+    $this->setupContentType('course');
+    $perms = array (
+      'read privatemsg',
+      'write privatemsg',
+    );
+    $this->student = $this->createStudent($perms);
+  }
+
+  function testUserLinks() {
+    $links = classroom_privatemsg_classroom_user_links($this->student, "a/url");
+    $this->assertTrue(isset($links['classroom_privatemsg']));
+    $url = $links['classroom_privatemsg'][0];
+    $expected = "{.+messages/new/{$this->student->uid}&amp;destination=a/url}";
+    $this->assertTrue(preg_match($expected, $url));
+  }
+}

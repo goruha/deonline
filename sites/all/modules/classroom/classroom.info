@@ -1,0 +1,13 @@
+; $Id: classroom.info,v 1.2 2009/08/01 05:14:19 osoh Exp $
+name = Classroom
+description = A simple e-learning module
+core = 6.x
+
+; dependencies
+
+; Information added by drupal.org packaging script on 2010-07-14
+version = "6.x-1.1"
+core = "6.x"
+project = "classroom"
+datestamp = "1279147207"
+

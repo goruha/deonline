@@ -1,0 +1,8 @@
+* Support for registration blocking at UI level.
+* Course cloning.
+* Access control in forums related to classroom courses.
+* i18n.
+* Support PostgreSQL and MySQL 4.
+* The module must be able to set up permissions properly by itself. At this
+time, permissions could be assigned in an automatic way, but when settings are
+changed, old permissions aren't removed.

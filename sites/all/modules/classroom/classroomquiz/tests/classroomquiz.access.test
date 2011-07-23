@@ -1,0 +1,194 @@
+<?php
+// $Id: classroomquiz.access.test,v 1.4 2009/08/18 09:11:21 osoh Exp $
+
+include_once(dirname(__FILE__) .'/classroomquiz.test');
+include_once(dirname(__FILE__) .'/../classroomquiz.access.inc');
+
+class ClassroomQuizAccessTestCase extends ClassroomQuizTestCase {
+
+
+  public static function getInfo() {
+    return array(
+      'name' => t('Classroom quiz access functions'),
+      'desc' => t('Tests for access quiz integration'),
+      'group' => t('ClassroomQuiz tests'),
+    );
+  }
+
+  function setUp() {
+    parent::setUp(
+      array('quiz',
+      'multichoice',
+      'classroomquiz'));
+  }
+
+  /**
+   * Test   classroomquiz_user_is_signed_up_or_owner_by_quiz($quiz_nid)
+   */
+  function testUserIsSignedUpOrAdminByQuiz(){
+    
+    $this->loginUser($this->teacher);
+    $quiz = $this->createQuiz(); 
+
+    //Until refactorize the test check the quiz belongs to the course
+    $this->assertEqual($this->course_without_grade->nid,
+      $quiz->classroom_assignment["course_nid"]);
+    $this->assertTrue(classroomquiz_user_is_signed_up_or_owner_by_quiz($quiz->nid));
+    $this->drupalLogout();
+    
+    $this->loginUser($this->student);
+    $this->assertTrue(classroomquiz_user_is_signed_up_or_owner_by_quiz($quiz->nid));
+    $this->drupalLogout();
+
+    $this->admin = $this->createAdmin(); 
+    $this->loginUser($this->admin);
+    $this->assertTrue(classroomquiz_user_is_signed_up_or_owner_by_quiz($quiz->nid));
+    $this->drupalLogout();
+
+    $this->studentWithoutCourse = $this->createStudent();
+    $this->loginUser($this->studentWithoutCourse);
+    $this->assertFalse(classroomquiz_user_is_signed_up_or_owner_by_quiz($quiz->nid));
+    $this->drupalLogout();
+
+  }
+ 
+ /**
+   * Test   classroomquiz_user_is_signed_up_or_owner_by_quiz($quiz_nid)
+   */
+  function testUserIsTeacherOrAdminByQuiz(){
+
+    $this->loginUser($this->teacher);
+    $quiz = $this->createQuiz(); 
+
+    //Until refactorize the test check the quiz belongs to the course
+    $this->assertEqual($this->course_without_grade->nid,
+      $quiz->classroom_assignment["course_nid"]);
+
+    $this->assertTrue(classroomquiz_is_teacher_or_owner_by_quiz($quiz->nid));
+    $this->drupalLogout();
+
+
+    $this->loginUser($this->student);
+    $this->assertFalse(classroomquiz_is_teacher_or_owner_by_quiz($quiz->nid));
+    $this->drupalLogout();
+
+
+    $this->admin = $this->createAdmin(); 
+    $this->loginUser($this->admin);
+    $this->assertTrue(classroomquiz_is_teacher_or_owner_by_quiz($quiz->nid));
+    $this->drupalLogout();
+
+
+    $this->studentWithoutCourse = $this->createStudent();
+    $this->loginUser($this->studentWithoutCourse);
+    $this->assertFalse(classroomquiz_is_teacher_or_owner_by_quiz($quiz->nid));
+    $this->drupalLogout();
+  }
+  
+  /**
+   * Test to validate all classroomquiz pages accessed by a teacher
+   */
+/*  function testClassroomTeacherQuizPagesAccess() {
+    $this->loginUser($this->teacher);
+    $quiz = $this->createQuiz();
+  
+    $this->drupalGet('classroomquiz/'.$quiz->nid);
+    $this->assertResponse('200');
+
+    $this->drupalGet('classroomquiz/'.$quiz->nid.'/view');
+    $this->assertResponse('200');
+    
+    $this->drupalGet('classroomquiz/'.$quiz->nid.'/questions');
+    $this->assertResponse('200');
+
+    $this->drupalGet('classroomquiz/'.$quiz->nid.'/admin');
+    $this->assertResponse('200');
+
+    $this->drupalGet('classroomquiz/'.$quiz->nid.'/edit');
+    $this->assertResponse('200');
+
+    $this->drupalLogout();
+  }
+ */
+  /**
+   * Test to validate all classroomquiz pages accessed by admin
+   */
+/*  function testClassroomAdminQuizPagesAccess() {
+    $admin = $this->createAdmin();
+    $this->loginUser($admin);
+    $quiz = $this->createQuiz();
+  
+    $this->drupalGet('classroomquiz/'.$quiz->nid);
+    $this->assertResponse('200');
+
+    $this->drupalGet('classroomquiz/'.$quiz->nid.'/view');
+    $this->assertResponse('200');
+    
+    $this->drupalGet('classroomquiz/'.$quiz->nid.'/questions');
+    $this->assertResponse('200');
+
+    $this->drupalGet('classroomquiz/'.$quiz->nid.'/admin');
+    $this->assertResponse('200');
+
+    $this->drupalGet('classroomquiz/'.$quiz->nid.'/edit');
+    $this->assertResponse('200');
+
+    $this->drupalLogout();
+  }
+ */
+  /**
+   * Test to validate all classroomquiz pages accesed for 
+   * a student without course
+   */
+ /* function testClassroomStudentOtherCourseQuizPagesAccess() {
+    $studentWithoutCourse = $this->createStudent();
+    $this->loginUser($studentWhithoutCourse);
+    $quiz = $this->createQuiz();
+  
+    $this->drupalGet('classroomquiz/'.$quiz->nid);
+    $this->assertResponse('200');
+
+    $this->drupalGet('classroomquiz/'.$quiz->nid.'/view');
+    $this->assertResponse('200');
+    
+    $this->drupalGet('classroomquiz/'.$quiz->nid.'/questions');
+    $this->assertResponse('200');
+
+    $this->drupalGet('classroomquiz/'.$quiz->nid.'/admin');
+    $this->assertResponse('200');
+
+    $this->drupalGet('classroomquiz/'.$quiz->nid.'/edit');
+    $this->assertResponse('200');
+
+    $this->drupalLogout();
+  }
+
+  */
+  /**
+   * Test to validate all classroomquiz pages accesed for
+   * a student without course
+   */
+/*  function testClassroomStudentQuizPagesAccess() {
+    $this->loginUser($this->student);
+    $quiz = $this->createQuiz();
+
+    $this->drupalGet('classroomquiz/'.$quiz->nid);
+    $this->assertNoText(t('Access denied'));
+
+    $this->drupalGet('classroomquiz/'.$quiz->nid.'/view');
+    $this->assertNoText(t('Access denied'));
+
+    $this->drupalGet('classroomquiz/'.$quiz->nid.'/questions');
+    var_dump($this->drupalGetContent());
+    $this->assertText(t('Access denied'));
+
+    $this->drupalGet('classroomquiz/'.$quiz->nid.'/admin');
+    $this->assertText(t('Access denied'));
+
+    $this->drupalGet('classroomquiz/'.$quiz->nid.'/edit');
+    $this->assertText(t('Access denied'));
+
+    $this->drupalLogout();
+  }
+ */
+}

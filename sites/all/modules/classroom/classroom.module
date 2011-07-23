@@ -1,0 +1,533 @@
+<?php
+// $Id: classroom.module,v 1.22 2010/01/12 14:40:30 osoh Exp $
+
+// Default value for pager limit.
+define('CLASSROOM_PAGER_LIMIT_DEFAULT', 20);
+
+// Classroom user roles.
+define('CLASSROOM_STUDENT', 0);
+define('CLASSROOM_TEACHER', 1);
+define('CLASSROOM_MANAGER', 2);
+
+// Classroom user roles. This is a workaround because if you use an integer n in the
+// 'access arguments' option, Drupal pass n-th component of the URL (arg(n)) to the
+// 'access callback'. If you pass a string, Drupal doesn't alter this value.
+define('CLASSROOM_STUDENT_STRING', '0');
+define('CLASSROOM_TEACHER_STRING', '1');
+define('CLASSROOM_MANAGER_STRING', '2');
+
+/**
+ * Implementation of hook_init().
+ */
+function classroom_init() {
+  module_load_include('inc', 'classroom', 'classroom.access');
+  module_load_include('inc', 'classroom', 'classroom.assignments');
+  module_load_include('inc', 'classroom', 'classroom.blocks');
+  module_load_include('inc', 'classroom', 'classroom.common');
+  module_load_include('inc', 'classroom', 'classroom.courses');
+  module_load_include('inc', 'classroom', 'classroom.pages');
+  module_load_include('inc', 'classroom', 'classroom.resources');
+  module_load_include('inc', 'classroom', 'classroom.responses');
+  module_load_include('inc', 'classroom', 'classroom.topics');
+  module_load_include('inc', 'classroom', 'classroom.users');
+}
+
+/**
+ * Implementation of hook_perm()
+ */
+ function classroom_perm() {
+   return array('administer classroom', 'access classroom');
+ }
+
+/**
+ * Implementation of hook_menu().
+ */
+function classroom_menu() {
+  $items = array();
+
+  $items['node/%/responses'] = array(
+    'title' => 'Responses',
+    'description' => 'Responses of an assignment',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('classroom_assignment_responses_form', 1),
+    'access callback' => 'classroom_check_access',
+    'access arguments' => array(1, array(CLASSROOM_MANAGER_STRING, CLASSROOM_TEACHER_STRING), 'assignment'),
+    'type' => MENU_LOCAL_TASK,
+    'file' => 'classroom.pages.inc',
+  );
+
+  $items['admin/settings/classroom'] = array(
+    'title' => 'Classroom',
+    'description' => 'Classroom settings',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('classroom_courses_admin'),
+    'access arguments' => array('administer classroom'),
+    'type' => MENU_NORMAL_ITEM,
+    'file' => 'classroom.admin.inc',
+  );
+
+  $items['admin/settings/classroom/courses'] = array(
+    'title' => 'Courses',
+    'description' => 'Courses settings',
+    'access arguments' => array('administer classroom'),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => 0,
+    'file' => 'classroom.admin.inc',
+  );
+
+  $items['admin/settings/classroom/resources'] = array(
+    'title' => 'Resources',
+    'description' => 'Resources settings',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('classroom_resources_admin'),
+    'access arguments' => array('administer classroom'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 1,
+    'file' => 'classroom.admin.inc',
+  );
+
+  $items['admin/settings/classroom/assignments'] = array(
+    'title' => 'Assignments',
+    'description' => 'Assignments settings',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('classroom_assignments_admin'),
+    'access arguments' => array('administer classroom'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 2,
+    'file' => 'classroom.admin.inc',
+  );
+
+  $items['admin/settings/classroom/responses'] = array(
+    'title' => 'Responses',
+    'description' => 'Responses settings',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('classroom_responses_admin'),
+    'access arguments' => array('administer classroom'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 3,
+    'file' => 'classroom.admin.inc',
+  );
+
+  $items['admin/settings/classroom/roles'] = array(
+    'title' => 'Roles and permissions',
+    'description' => 'Roles and permissions settings',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('classroom_roles_admin'),
+    'access arguments' => array('administer classroom'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 4,
+    'file' => 'classroom.admin.inc',
+  );
+
+  $items['classroom'] = array(
+    'title' => 'Courses',
+    'description' => 'List of courses',
+    'page callback' => 'classroom_courses_page',
+    'access arguments' => array('access classroom'),
+    'type' => MENU_NORMAL_ITEM,
+    'file' => 'classroom.pages.inc',
+  );
+
+  $items['classroom/course/%'] = array(
+    'title callback' => '_classroom_course_page_title',
+    'title arguments' => array(2),
+    'description' => 'Course page',
+    'page callback' => 'classroom_course_page',
+    'page arguments' => array(2),
+    'access callback' => 'classroom_check_access',
+    'access arguments' => array(2),
+    'type' => MENU_NORMAL_ITEM,
+    'file' => 'classroom.pages.inc',
+  );
+
+  $items['classroom/course/%/view'] = array(
+    'title' => 'Description',
+    'description' => 'Course page',
+    'access arguments' => array('administer classroom'),
+    'access callback' => 'classroom_check_access',
+    'access arguments' => array(2),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -1,
+    'file' => 'classroom.admin.inc',
+  );
+
+  $items['classroom/course/%/news'] = array(
+    'title' => 'News',
+    'description' => 'News page',
+    'page callback' => 'classroom_course_news_page',
+    'page arguments' => array(2),
+    'access callback' => 'classroom_check_access',
+    'access arguments' => array(2),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 0,
+    'file' => 'classroom.admin.inc',
+  );
+
+  $items['classroom/course/%/topics'] = array(
+    'title' => 'Topics',
+    'description' => 'Topics list',
+    'page callback' => 'classroom_course_topics_page',
+    'page arguments' => array(2),
+    'access callback' => 'classroom_check_access',
+    'access arguments' => array(2, array(CLASSROOM_MANAGER_STRING, CLASSROOM_TEACHER_STRING)),
+    'type' => MENU_CALLBACK,
+    'weight' => 1,
+    'file' => 'classroom.pages.inc',
+  );
+
+  $items['classroom/course/%/topics/add'] = array(
+    'title' => 'Add topics',
+    'description' => 'Add topics to a course',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('classroom_course_add_topic_form', 2),
+    'access callback' => 'classroom_check_access',
+    'access arguments' => array(2, CLASSROOM_TEACHER_STRING),
+    'type' => MENU_CALLBACK,
+    'weight' => 1,
+    'file' => 'classroom.pages.inc',
+  );
+
+  $items['classroom/course/%/topics/%/edit'] = array(
+    'title' => 'Edit topic',
+    'description' => 'Edit a topic',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('classroom_course_edit_topic_form', 4),
+    'access callback' => 'classroom_check_access',
+    'access arguments' => array(2, CLASSROOM_TEACHER_STRING),
+    'type' => MENU_CALLBACK,
+    'weight' => 2,
+    'file' => 'classroom.pages.inc',
+  );
+
+  $items['classroom/course/%/assignments'] = array(
+    'title' => 'Assignments',
+    'description' => 'Assignments list',
+    'page callback' => 'classroom_course_assignments_page',
+    'page arguments' => array(2),
+    'access callback' => 'classroom_check_access',
+    'access arguments' => array(2),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 2,
+    'file' => 'classroom.pages.inc',
+  );
+
+  $items['classroom/course/%/resources'] = array(
+    'title' => 'Resources',
+    'description' => 'Resources list',
+    'page callback' => 'classroom_course_resources_page',
+    'page arguments' => array(2),
+    'access callback' => 'classroom_check_access',
+    'access arguments' => array(2),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 3,
+    'file' => 'classroom.pages.inc',
+  );
+
+  $items['classroom/course/%/resources/add'] = array(
+    'title' => 'Add resources',
+    'description' => 'Add resources to a course',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('classroom_course_add_resources_form', 2),
+    'access callback' => 'classroom_check_access',
+    'access arguments' => array(2, CLASSROOM_TEACHER_STRING),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 1,
+    'file' => 'classroom.pages.inc',
+  );
+
+  $items['classroom/course/%/resources/remove'] = array(
+    'title' => 'Remove resources',
+    'description' => 'Remove resources from a course',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('classroom_course_remove_resources_form', 2),
+    'access callback' => 'classroom_check_access',
+    'access arguments' => array(2, CLASSROOM_TEACHER_STRING),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 2,
+    'file' => 'classroom.pages.inc',
+  );
+
+  $items['classroom/course/%/grades'] = array(
+    'title' => 'Grades',
+    'description' => 'Grades list',
+    'page callback' => 'classroom_course_grades_page',
+    'page arguments' => array(2),
+    'access callback' => 'classroom_check_access',
+    'access arguments' => array(2, array(CLASSROOM_MANAGER_STRING, CLASSROOM_TEACHER_STRING)),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 4,
+    'file' => 'classroom.pages.inc',
+  );
+
+  $items['classroom/course/%/students'] = array(
+    'title' => 'Students',
+    'description' => 'Students list',
+    'page callback' => 'classroom_course_students_page',
+    'page arguments' => array(2),
+    'access callback' => 'classroom_check_access',
+    'access arguments' => array(2),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 5,
+    'file' => 'classroom.pages.inc',
+  );
+
+  $items['classroom/course/%/students/add'] = array(
+    'title' => 'Add students',
+    'description' => 'Add students to a course',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('classroom_course_add_students_form', 2),
+    'access callback' => 'classroom_check_access',
+    'access arguments' => array(2, CLASSROOM_MANAGER_STRING),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 1,
+    'file' => 'classroom.pages.inc',
+  );
+
+  $items['classroom/course/%/students/remove'] = array(
+    'title' => 'Remove students',
+    'description' => 'Remove students from a course',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('classroom_course_remove_students_form', 2),
+    'access callback' => 'classroom_check_access',
+    'access arguments' => array(2, CLASSROOM_MANAGER_STRING),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 2,
+    'file' => 'classroom.pages.inc',
+  );
+
+  $items['classroom/course/%/teachers'] = array(
+    'title' => 'Teachers',
+    'description' => 'Teachers list',
+    'page callback' => 'classroom_course_teachers_page',
+    'page arguments' => array(2),
+    'access callback' => 'classroom_check_access',
+    'access arguments' => array(2),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 6,
+    'file' => 'classroom.pages.inc',
+  );
+
+  $items['classroom/course/%/teachers/add'] = array(
+    'title' => 'Add teachers',
+    'description' => 'Add teachers to a course',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('classroom_course_add_teachers_form', 2),
+    'access callback' => 'classroom_check_access',
+    'access arguments' => array(2, CLASSROOM_MANAGER_STRING),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 1,
+    'file' => 'classroom.pages.inc',
+  );
+
+  $items['classroom/course/%/teachers/remove'] = array(
+    'title' => 'Remove teachers',
+    'description' => 'Remove teachers from a course',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('classroom_course_remove_teachers_form', 2),
+    'access callback' => 'classroom_check_access',
+    'access arguments' => array(2, CLASSROOM_MANAGER_STRING),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 2,
+    'file' => 'classroom.pages.inc',
+  );
+
+  $items['classroom/course/%/managers'] = array(
+    'title' => 'Managers',
+    'description' => 'Managers list',
+    'page callback' => 'classroom_course_managers_page',
+    'page arguments' => array(2),
+    'access callback' => 'classroom_check_access',
+    'access arguments' => array(2),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 6,
+    'file' => 'classroom.pages.inc',
+  );
+
+  $items['classroom/course/%/managers/add'] = array(
+    'title' => 'Add managers',
+    'description' => 'Add managers to a course',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('classroom_course_add_managers_form', 2),
+    'access callback' => 'classroom_check_access',
+    'access arguments' => array(2, CLASSROOM_MANAGER_STRING),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 1,
+    'file' => 'classroom.pages.inc',
+  );
+
+  $items['classroom/course/%/managers/remove'] = array(
+    'title' => 'Remove managers',
+    'description' => 'Remove managers from a course',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('classroom_course_remove_managers_form', 2),
+    'access callback' => 'classroom_check_access',
+    'access arguments' => array(2, CLASSROOM_MANAGER_STRING),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 2,
+    'file' => 'classroom.pages.inc',
+  );
+
+  $items['classroom/course/%/topic/%'] = array(
+    'title callback' => '_classroom_topic_page_title',
+    'title arguments' => array(4),
+    'description' => 'Topic page',
+    'page callback' => 'classroom_topic_page',
+    'page arguments' => array(2, 4),
+    'access callback' => 'classroom_check_access',
+    'access arguments' => array(2),
+    'type' => MENU_CALLBACK,
+    'weight' => 0,
+    'file' => 'classroom.pages.inc',
+  );
+
+  return $items;
+}
+
+/**
+ * Implementation of hook_form_alter().
+ */
+function classroom_form_alter(&$form, $form_state, $form_id) {
+  if ($form_id == 'node_delete_confirm') {
+    $node = $form['#parameters'][2];
+    if (_classroom_is_type($node->type, 'course')){
+      $form = array_merge( $form,
+        _classroom_course_form_delete_fields($form, $form_state, $form_id));
+      return;
+    }
+
+    if (_classroom_is_type($node->type, 'response')){
+      $form = array_merge( $form,
+        _classroom_response_form_delete_fields($form, $form_state, $form_id));
+      return;
+    }
+
+    if (_classroom_is_type($node->type, 'assignment')){
+      $form = array_merge( $form,
+        _classroom_assignment_form_delete_fields($form, $form_state, $form_id));
+      return;
+    }
+  }
+
+  $type = substr($form_id, 0, strpos($form_id, '_node_form'));
+
+  if (empty($type)) {
+    return;
+  }
+  
+  if (_classroom_is_type($type, 'course')) {
+    $form = array_merge( $form, _classroom_course_form_fields($form, $form_state, $form_id) );
+  }
+
+  if (_classroom_is_type($type, 'assignment')) {
+    $form = array_merge( $form,  _classroom_assignment_form_fields($form, $form_state, $form_id) );
+
+  }
+
+  if (_classroom_is_type($type, 'response')) {
+    $form = array_merge( $form,  _classroom_response_form_fields($form, $form_state, $form_id) );
+  }
+}
+
+/**
+ * Implementation of hook_nodeapi().
+ */
+function classroom_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
+
+  if (classroom_is_course($node)) {
+    return _classroom_course_nodeapi($node, $op, $a3, $a4);
+  }
+
+  if (classroom_is_assignment($node)) {
+    return _classroom_assignment_nodeapi($node, $op, $a3, $a4);
+  }
+
+  if (classroom_is_response($node)) {
+    return _classroom_response_nodeapi($node, $op, $a3, $a4);
+  }
+
+  if (classroom_is_response($node)) {
+    return _classroom_resource_nodeapi($node, $op, $a3, $a4);
+  }
+}
+
+/**
+ * Implementation of hook_link().
+ */
+function classroom_link($type, $node, $teaser = FALSE) {
+  if ($type != 'node') return;
+  if ($node == null) return;
+
+  if (classroom_is_assignment($node)) {
+     return classroom_response_link($node);
+  }
+}
+
+/**
+ * Implementation of hook_theme().
+ */
+function classroom_theme() {
+  return array(
+    'classroom_course_add_teachers_form' => array(
+      'arguments' => array('form' => NULL),
+    ),
+    'classroom_course_add_students_form' => array(
+      'arguments' => array('form' => NULL),
+    ),
+    'classroom_course_remove_teachers_form' => array(
+      'arguments' => array('form' => NULL),
+    ),
+    'classroom_course_remove_students_form' => array(
+      'arguments' => array('form' => NULL),
+    ),
+    'classroom_course_add_resources_form' => array(
+      'arguments' => array('form' => NULL),
+    ),
+    'classroom_course_remove_resources_form' => array(
+      'arguments' => array('form' => NULL),
+    ),
+    'classroom_assignment_responses_form' => array(
+      'arguments' => array('form' => NULL),
+    ),
+  );
+}
+
+/**
+ * Implementation of hook_block().
+ */
+function classroom_block($op = 'list', $delta = 0, $edit = array()) {
+  switch ($op) {
+  case 'list':
+    $blocks = array();
+    $blocks[0] = array(
+        'info' => t('Classroom: my courses'),
+        );
+    $blocks[1] = array(
+        'info'  => t('Classroom: my assignments'),
+        );
+    $blocks[2] = array(
+        'info'  => t('Classroom: course topics'),
+        );
+    return $blocks;
+
+  case 'view':
+    switch ($delta) {
+    case 0:
+      return array(
+        'subject' => t('My courses'),
+        'content' => classroom_my_courses_block(),
+      );
+      break;
+    case 1:
+      return array(
+        'subject' => t('My assignments'),
+        'content' => classroom_my_assignments_block(),
+      );
+      break;
+    case 2:
+      return array(
+        'subject' => t('Topics'),
+        'content' => classroom_topics_block(),
+      );
+    }
+  }
+}

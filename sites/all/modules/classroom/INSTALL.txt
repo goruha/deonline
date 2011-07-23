@@ -1,0 +1,59 @@
+// $Id: INSTALL.txt,v 1.7 2010/01/28 12:42:07 osoh Exp $
+
+INSTALLATION
+------------
+
+  1. Place the classroom folder into your modules directory.
+
+  2. Go to 'Administer -> Site building -> Modules' and enable the 'Classroom
+  module'. You can also enable any other classroom related module.
+
+  3. Go to 'Administer -> Site configuration -> Classroom' to do some basic
+  configuration. You must select at least one content type for each key concept
+  (course, assignment, response and resource). Any simple content type will
+  work.
+
+  4. Set up permissions. Setting up permissions by hand can be a bit bothering.
+  So in the modules' settings page you have a 'Roles and permission' tab where
+  you can instruct classroom module to set up basic permissions automatically.
+  Read 'ROLES AND PERMISSIONS' section for more info.
+
+  5. Recommended: enable the 'Courses' link (it's located in the 'Navigation'
+  menu).
+
+  6. Optional: enable the 'Classroom: my courses' block.
+
+
+ROLES AND PERMISSIONS
+---------------------
+
+Although it isn't mandatory, it is a good idea to set up different roles for
+students and teachers, so permissions management could be easier.
+
+Classroom module is able to set up basic permissions by itself for teachers and students:
+
+  * For teachers:
+    - classroom access
+    - create assignment content
+    - edit own assignment content
+    - delete own assignment content
+    - edit any assignment content
+    - delete any assignment content
+    Note: you can revoke 'edit/delete any assignment content'. In that
+    case, teachers could only edit/delete their own assignments.
+
+  * For students:
+    - classroom access
+    - create response content
+    - edit own response content
+    - delete own response content
+
+Some additional permissions are not added automatically to any role. You
+must assign them as you wish:
+
+  * For classroom administrator:
+    - classroom administer
+
+  * For course managers (people who can create courses):
+    - create course content
+    - edit own course content

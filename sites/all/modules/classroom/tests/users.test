@@ -1,0 +1,263 @@
+<?php
+// $Id: users.test,v 1.3 2010/01/07 10:27:54 osoh Exp $
+
+include_once(dirname(__FILE__) . '/classroom.test');
+
+class ClassroomUsersTestCase extends ClassroomTestCase {
+  var $course, $user;
+
+  public static function getInfo() {
+    return array(
+      'name' => t('Users functions'),
+      'desc' => t('Tests for user related functions.'),
+      'group' => t('Classroom tests'),
+    );
+  }
+
+  function setup() {
+    parent::setUp();
+    $this->setupContentType('course');
+    $this->course = $this->createClassroomNode('course', 'Course #1');
+    $this->user = $this->drupalCreateUser();
+  }
+
+  function testSignUpAndOffUser() {
+    $this->assertFalse(classroom_is_student($this->user, $this->course));
+    classroom_register_student($this->user, $this->course);
+    $this->assertTrue(classroom_is_student($this->user, $this->course));
+    $this->assertFalse(classroom_is_teacher($this->user, $this->course));
+    classroom_signoff_student($this->user, $this->course);
+    $this->assertFalse(classroom_is_student($this->user, $this->course));
+  }
+
+  function testSignUpAndOffTeacher() {
+    $this->assertFalse(classroom_is_teacher($this->user, $this->course));
+    classroom_register_teacher($this->user, $this->course);
+    $this->assertFalse(classroom_is_student($this->user, $this->course));
+    $this->assertFalse(classroom_is_active_as_student($this->user, $this->course));
+    $this->assertTrue(classroom_is_teacher($this->user, $this->course));
+    $this->assertTrue(classroom_is_active_as_teacher($this->user, $this->course));
+    classroom_signoff_teacher($this->user, $this->course);
+    $this->assertFalse(classroom_is_teacher($this->user, $this->course));
+  }
+
+  function testSignUpMultipleTeachers() {
+    $this->assertFalse(classroom_is_teacher($this->user, $this->course));
+    // Add a teacher
+    classroom_register_teacher($this->user, $this->course);
+
+    // Create a user...
+    $another_user = $this->drupalCreateUser();
+    $this->assertFalse(classroom_is_teacher($another_user, $this->course));
+    // and add as a teacher to the course
+    classroom_register_teacher($another_user, $this->course);
+
+    // Test that both users are teachers.
+    $this->assertTrue(classroom_is_teacher($another_user, $this->course));
+    $this->assertTrue(classroom_is_teacher($this->user, $this->course));
+  }
+
+  function testSignUpMultipleStudents() {
+    $this->assertFalse(classroom_is_student($this->user, $this->course));
+    // Add a teacher
+    classroom_register_student($this->user, $this->course);
+
+    // Create a user...
+    $another_user = $this->drupalCreateUser();
+    $this->assertFalse(classroom_is_student($another_user, $this->course));
+    // and add as a teacher to the course
+    classroom_register_student($another_user, $this->course);
+
+    // Test that both users are teachers.
+    $this->assertTrue(classroom_is_student($another_user, $this->course));
+    $this->assertTrue(classroom_is_student($this->user, $this->course));
+  }
+
+  function testSignUpAndOffManager() {
+    $this->assertFalse(classroom_is_manager($this->user, $this->course));
+    classroom_register_manager($this->user, $this->course);
+    $this->assertFalse(classroom_is_student($this->user, $this->course));
+    $this->assertFalse(classroom_is_active_as_student($this->user, $this->course));
+    $this->assertTrue(classroom_is_manager($this->user, $this->course));
+    $this->assertTrue(classroom_is_active_as_manager($this->user, $this->course));
+    classroom_signoff_manager($this->user, $this->course);
+    $this->assertFalse(classroom_is_manager($this->user, $this->course));
+    $this->assertFalse(classroom_is_student($this->user, $this->course));
+  }
+
+  // A user can't be student and teacher at the same time for the same course.
+  function testCantBeStudentAndTeacherForSameCourse() {
+    // Sign up user as student
+    classroom_register_student($this->user, $this->course);
+
+    // Can't be signed up as teacher at the same time
+    $this->assertFalse(classroom_register_teacher($this->user, $this->course));
+    $this->assertTrue(classroom_is_student($this->user, $this->course));
+    $this->assertFalse(classroom_is_teacher($this->user, $this->course));
+  }
+
+  function testCanBeStudentAndTeacherForDifferentCourses() {
+    // Sign up user as student
+    classroom_register_student($this->user, $this->course);
+
+    // Sign up user as teacher for another course.
+    $another_course = $this->createClassroomNode('course', 'Course #2');
+    $this->assertTrue(classroom_register_teacher($this->user, $another_course));
+    $this->assertTrue(classroom_is_teacher($this->user, $another_course));
+  }
+
+  function testIsStudentByUid () {
+    $this->assertFalse(classroom_is_student($this->user, $this->course));
+    $this->assertFalse(classroom_is_student($this->user->uid, $this->course));
+    classroom_register_student($this->user, $this->course);
+    $this->assertTrue(classroom_is_student($this->user, $this->course));
+    $this->assertTrue(classroom_is_student($this->user->uid, $this->course));
+    $this->assertFalse(classroom_is_teacher($this->user, $this->course));
+    $this->assertFalse(classroom_is_teacher($this->user->uid,$this->course));
+  }
+
+  function testIsTeacherByUid () {
+    $this->assertFalse(classroom_is_teacher($this->user, $this->course));
+    $this->assertFalse(classroom_is_teacher($this->user->uid, $this->course));
+    classroom_register_teacher($this->user, $this->course);
+    $this->assertFalse(classroom_is_student($this->user, $this->course));
+    $this->assertFalse(classroom_is_student($this->user->uid, $this->course));
+    $this->assertTrue(classroom_is_teacher($this->user, $this->course));
+    $this->assertTrue(classroom_is_teacher($this->user->uid, $this->course));
+  }
+
+  function testNoSignUpAnonymousUser() {
+    $anonymous = user_load(array('uid' => 0));
+    $this->assertFalse(classroom_register_student($anonymous, $this->course));
+    $this->assertFalse(classroom_register_teacher($anonymous, $this->course));
+  }
+
+  function testIsUserSigned() {
+    $this->assertFalse(classroom_is_user_registered($this->user, $this->course));
+    classroom_register_teacher($this->user, $this->course);
+    $this->assertTrue(classroom_is_user_registered($this->user, $this->course));
+    classroom_signoff_teacher($this->user, $this->course);
+    $this->assertFalse(classroom_is_user_registered($this->user, $this->course));
+    classroom_register_student($this->user, $this->course);
+    $this->assertTrue(classroom_is_user_registered($this->user, $this->course));
+  }
+
+  function testSuspendAndActivateStudentRegistration() {
+    $student = $this->createStudent();
+    $this->assertTrue(classroom_register_student($student, $this->course));
+    $this->assertTrue(classroom_is_active_as_student($student, $this->course));
+    classroom_suspend_registration($student, $this->course);
+    $this->assertFalse(classroom_is_active_as_student($student, $this->course));
+    classroom_activate_registration($student, $this->course);
+    $this->assertTrue(classroom_is_active_as_student($student, $this->course));
+  }
+
+  function testSuspendAndActivateTeacherRegistration() {
+    $teacher = $this->createTeacher();
+    $this->assertTrue(classroom_register_teacher($teacher, $this->course));
+    $this->assertTrue(classroom_is_active_as_teacher($teacher, $this->course));
+    classroom_suspend_registration($teacher, $this->course);
+    $this->assertFalse(classroom_is_active_as_teacher($teacher, $this->course));
+    classroom_activate_registration($teacher, $this->course);
+    $this->assertTrue(classroom_is_active_as_teacher($teacher, $this->course));
+  }
+
+  function testUserIsRegistered() {
+    $student = $this->createStudent();
+    $teacher = $this->createTeacher();
+    classroom_register_student($student, $this->course);
+    $this->assertTrue(classroom_is_user_registered($student, $this->course));
+    classroom_register_teacher($teacher, $this->course);
+    $this->assertTrue(classroom_is_user_registered($teacher, $this->course));
+  }
+
+  function testUserRegistrationDate() {
+    $student = $this->createStudent();
+    $student2 = $this->createStudent();
+    $teacher = $this->createTeacher();
+    $teacher2 = $this->createTeacher();
+
+    classroom_register_student($student, $this->course);
+    $this->assertEqual(classroom_get_registration_date($student, $this->course),
+      _classroom_timestamp_to_form_date(time()),"The dates are equals");
+    $this->assertFalse(classroom_get_registration_date($student2, $this->course));
+
+    classroom_register_teacher($teacher, $this->course);
+    $this->assertEqual(classroom_get_registration_date($teacher, $this->course),
+      _classroom_timestamp_to_form_date(time()), "The dates are equals");
+    $this->assertFalse(classroom_get_registration_date($teacher2, $this->course));
+  }
+
+  function testGetCourses() {
+    $student = $this->createStudent();
+    $other_course = $this->createClassroomNode('course', 'Course #3');
+
+    // Unregistered student
+    $courses = classroom_get_courses_for_user($student);
+    $this->assertTrue(empty($courses));
+
+    // Register the student in a course
+    classroom_register_student($student, $this->course);
+    $courses = classroom_get_courses_for_user($student);
+    $this->assertEqual(count($courses), 1);
+    $this->assertEqual($courses[0]->nid, $this->course->nid);
+
+    // Register the student in a second course
+    classroom_register_student($student, $other_course);
+    $courses = classroom_get_courses_for_user($student);
+    $this->assertEqual(count($courses), 2);
+
+    // FIXME: Something weird is happening with node_load in simpletest
+    // environment. It's retrieving the node from the 'original' node table.
+    foreach ($courses as $course) {
+      $this->assertEqual($course->type, 'course');
+    }
+  }
+
+  function testAccessByRoleWhenUpdatingAUser() {
+    // Create a new role.
+    $rid = (int) $this->createRole();
+    $role_name = db_result(db_query('SELECT name FROM {role} WHERE rid = %d', $rid));
+
+    $course = $this->createClassroomNode('course', 'Course #2',
+      array(
+        'classroom_course' => array(
+          'access_by_rid' => $rid,
+          'use_grade_percentages' => 1,
+        ),
+      )
+    );
+    $this->assertFalse(classroom_is_active_as_student($this->user, $course));
+    $old_roles = $this->user->roles;
+    $roles = $old_roles + array($rid => $role_name);
+    user_save($this->user, array('roles' => $roles));
+    $this->assertTrue(classroom_is_active_as_student($this->user, $course));
+    node_save($course);
+    user_save($this->user, array('roles' => $old_roles));
+    $this->user = user_load($this->user->uid);
+    $this->assertFalse(classroom_is_active_as_student($this->user, $course));
+  }
+
+  function testAccessByRoleWhenUpdatingACourse() {
+    // Create a new role.
+    $rid = (int) $this->createRole();
+    $role_name = db_result(db_query('SELECT name FROM {role} WHERE rid = %d', $rid));
+    $roles = $this->user->roles + array($rid => $role_name);
+    user_save($this->user, array('roles' => $roles));
+
+    $course = $this->createClassroomNode('course', 'Course #2',
+      array(
+        'classroom_course' => array(
+          'access_by_rid' => $rid,
+          'use_grade_percentages' => 1,
+        ),
+      )
+    );
+
+    $this->assertTrue(classroom_is_active_as_student($this->user, $course));
+    $course->classroom_course["access_by_rid"] = 0;
+    node_save($course);
+    $this->assertFalse(classroom_is_active_as_student($this->user, $course));
+  }
+
+}

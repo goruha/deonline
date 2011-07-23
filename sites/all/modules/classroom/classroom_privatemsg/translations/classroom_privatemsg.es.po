@@ -1,0 +1,32 @@
+# $Id: classroom_privatemsg.es.po,v 1.2 2010/01/12 14:40:30 osoh Exp $
+#
+# Spanish translation of Drupal (classroom_privatemsg)
+# Copyright 2010 Banot.net <info@banot.net>
+# Generated from files:
+#  classroom_privatemsg/classroom_privatemsg.module: n/a
+#  classroom_privatemsg/classroom_privatemsg.info: n/a
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"POT-Creation-Date: 2010-01-12 14:08+0000\n"
+"PO-Revision-Date: YYYY-mm-DD HH:MM+ZZZZ\n"
+"Last-Translator: Imobach González Sosa <imobachgs@banot.net>\n"
+"Language-Team: Spanish <info@banot.net>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: classroom_privatemsg/classroom_privatemsg.module:12
+msgid "Send message"
+msgstr "Enviar mensaje"
+
+#: classroom_privatemsg/classroom_privatemsg.info:0
+msgid "Classroom Privatemsg"
+msgstr ""
+
+#: classroom_privatemsg/classroom_privatemsg.info:0
+msgid "Provides classroom integration with Privatemsg module"
+msgstr "Ofrece integración de Classroom con el módulo Privatemsg"

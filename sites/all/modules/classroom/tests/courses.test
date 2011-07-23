@@ -1,0 +1,309 @@
+<?php
+// $Id: courses.test,v 1.4 2009/12/28 16:30:14 osoh Exp $
+
+include_once(dirname(__FILE__) .'/classroom.test');
+
+class ClassroomCoursesTestCase extends ClassroomTestCase {
+
+  public static function getInfo() {
+    return array(
+      'name' => t('Courses functions'),
+      'desc' => t('Tests for courses.'),
+      'group' => t('Classroom tests'),
+    );
+  }
+
+  function setUp() {
+    parent::setUp();
+    $this->setupContentType('course');
+    $this->admin = $this->createAdmin(array('course'));
+  }
+
+  function testCreateCourse() {
+    $start_date = time();
+    $end_date = time() + 86400;
+    $this->drupalLogin($this->admin);
+
+    $edit = array(
+      'title' => 'Course #1',
+      'classroom_course[use_grade_percentages]' => 0);
+    $edit += $this->dateToDatetimeForm($start_date, 'course', 'start_date');
+    $edit += $this->dateToDatetimeForm($end_date, 'course', 'end_date');
+    $content = $this->drupalPost('node/add/course', $edit, t('Save'));
+    $course = $this->drupalGetNodeByTitle('Course #1');
+    $this->assertTrue(is_object($course));
+  }
+
+  function testCreateUnlimitedCourse() {
+    $this->drupalLogin($this->admin);
+
+    $edit = array(
+      'title' => 'Course #4',
+      'classroom_course[unlimitedend]' => 1,
+      'classroom_course[use_grade_percentages]' => 0);
+
+    $edit += $this->dateToDatetimeForm($start_date, 'course', 'start_date');
+    $content = $this->drupalPost('node/add/course', $edit, t('Save'));
+    $course = $this->drupalGetNodeByTitle('Course #4');
+    $this->assertTrue(is_object($course));
+  }
+
+  function testCreateUnlimitedWithBadDatesCourse() {
+    $start_date = time();
+    $end_date = time() - 86400;
+    $this->drupalLogin($this->admin);
+
+    $edit = array(
+      'title' => 'Course #5',
+      'classroom_course[unlimitedend]' => 1,
+      'classroom_course[use_grade_percentages]' => 0);
+    $edit += $this->dateToDatetimeForm($start_date, 'course', 'start_date');
+    $edit += $this->dateToDatetimeForm($end_date, 'course', 'end_date');
+    $content = $this->drupalPost('node/add/course', $edit, t('Save'));
+    $course = $this->drupalGetNodeByTitle('Course #5');
+    $this->assertTrue(is_object($course));
+  }
+
+  function testValidateDates() {
+    $start_date = time();
+    $end_date = time() + 86400;
+    $this->drupalLogin($this->admin);
+
+    // Course #2: end_date < start_date
+    $edit = array('title' => 'Course #2',
+      'classroom_course[use_grade_percentages]' => 0);
+    $edit += $this->dateToDatetimeForm($end_date, 'course', 'start_date');
+    $edit += $this->dateToDatetimeForm($start_date, 'course', 'end_date');
+    $content = $this->drupalPost('node/add/course', $edit, t('Save'));
+    $this->assertText(t('An event may not end before it starts.'));
+    $this->assertFalse($this->drupalGetNodeByTitle('Course #2'));
+
+    // Course #3: registration_start_date > end_date 
+    $edit = array('title' => 'Course #3',
+      'classroom_course[use_grade_percentages]' => 0);
+    $edit += $this->dateToDatetimeForm($start_date, 'course', 'start_date');
+    $edit += $this->dateToDatetimeForm($end_date, 'course', 'end_date');
+    $edit += $this->dateToDatetimeForm(($end_date+86400), 'course', 'registration_start_date');
+    $edit += $this->dateToDatetimeForm(($end_date+172800), 'course', 'registration_end_date');
+    $content = $this->drupalPost('node/add/course', $edit, t('Save'));
+    $this->assertText(t('The registration period may not start after the course ends.'));
+    $this->assertFalse($this->drupalGetNodeByTitle('Course #3'));
+
+
+    // Course #4: registration_end_date < registration_start_date
+    $edit = array('title' => 'Course #4',
+      'classroom_course[use_grade_percentages]' => 0);
+    $edit += $this->dateToDatetimeForm($start_date, 'course', 'start_date');
+    $edit += $this->dateToDatetimeForm($end_date, 'course', 'end_date');
+    $edit += $this->dateToDatetimeForm(($start_date-86400), 'course', 'registration_start_date');
+    $edit += $this->dateToDatetimeForm(($start_date-172800), 'course', 'registration_end_date');
+    $content = $this->drupalPost('node/add/course', $edit, t('Save'));
+    $this->assertText(t('The registration period starting date must be prior to the ending date.'));
+    $this->assertFalse($this->drupalGetNodeByTitle('Course #4'));
+
+
+  }
+
+  function testSignupIsOpen() {
+    $today = time();
+    $course = $this->createClassroomNode('course', 'Course #3');
+    // No dates (always open).
+    $this->assertTrue(classroom_course_is_open($course));
+    // Just in the middle of the sign-up period.
+    $course->classroom_course['registration_start'] = $today - 86400;
+    $course->classroom_course['registration_end'] = $today + 86400;
+    $this->assertTrue(classroom_course_is_open($course));
+    // Sign-up period is over.
+    $course->classroom_course['registration_start'] = $today - 86400;
+    $course->classroom_course['registration_end'] = $today - 43200;
+    // Sign-up period isn't open yet.
+    $course->classroom_course['registration_start'] = $today + 43200;
+    $course->classroom_course['registration_end'] = $today + 86400;
+    $this->assertFalse(classroom_course_is_open($course));
+
+    // Only sign-up start date is defined (and sign-up period is open).
+    $course->classroom_course['registration_start'] = $today - 43200;
+    $course->classroom_course['registration_end'] = NULL;
+    $this->assertTrue(classroom_course_is_open($course));
+    // Only sign-up start date is defined (but sign-up period is not open yet).
+    $course->classroom_course['registration_start'] = $today + 43200;
+    $course->classroom_course['registration_end'] = NULL;
+    $this->assertFalse(classroom_course_is_open($course));
+
+    // Only sign-up end date is defined (and sign-up period is open yet).
+    $course->classroom_course['registration_start'] = NULL;
+    $course->classroom_course['registration_end'] = $today + 43200;
+    $this->assertTrue(classroom_course_is_open($course));
+    // Only sign-up start date is defined (but sign-up period is not open yet).
+    $course->classroom_course['registration_start'] = NULL;
+    $course->classroom_course['registration_end'] = $today - 43200;
+    $this->assertFalse(classroom_course_is_open($course));
+  }
+
+  function testUpdateCourse() {
+    $start_date = time();
+    $end_date = time() + 86400;
+    $this->drupalLogin($this->admin);
+
+    $edit = array(
+      'title' => 'Course #1',
+      'classroom_course[use_grade_percentages]' => 0);
+    $edit += $this->dateToDatetimeForm($start_date, 'course', 'start_date');
+    $edit += $this->dateToDatetimeForm($end_date, 'course', 'end_date');
+    $edit += $this->dateToDatetimeForm(($start_date - 172800), 'course', 'registration_start_date');
+    $edit += $this->dateToDatetimeForm(($start_date - 86400), 'course', 'registration_end_date');
+    $content = $this->drupalPost('node/add/course', $edit, t('Save'));
+    $course = $this->drupalGetNodeByTitle('Course #1');
+    $this->assertTrue(is_object($course));
+
+    $edit = array(
+      'title' => 'Course #2',
+      'classroom_course[use_grade_percentages]' => 1);
+    $edit += $this->dateToDatetimeForm(($start_date + 86400), 'course', 'start_date');
+    $edit += $this->dateToDatetimeForm(($end_date + 172800), 'course', 'end_date');
+    $edit += $this->dateToDatetimeForm(($start_date - 86400), 'course', 'registration_start_date');
+    $edit += $this->dateToDatetimeForm(($start_date), 'course', 'registration_end_date');
+    $content = $this->drupalPost('node/'.$course->nid.'/edit',$edit, t('Save'));
+    
+    $course = $this->drupalGetNodeByTitle('Course #2');
+    $this->assertTrue(is_object($course));
+    $this->assertEqual($course->classroom_course["use_grade_percentages"], 1, 'Use grade percentages are equal');
+    $this->assertEqual($course->classroom_course["start_date"], _classroom_timestamp_to_form_date(($start_date + 86400)), 'Start dates are equal');
+    $this->assertEqual($course->classroom_course["end_date"], _classroom_timestamp_to_form_date(($end_date + 172800)), 'End dates are equal');
+    $this->assertEqual($course->classroom_course["registration_start_date"], _classroom_timestamp_to_form_date(($start_date - 86400)), 'Signup start dates are equal');
+    $this->assertEqual($course->classroom_course["registration_end_date"], _classroom_timestamp_to_form_date($start_date), 'Signup end dates are equal');
+  }
+
+  function testGetStudents() {
+    $student = $this->createStudent();
+    $course = $this->createClassroomNode('course', 'Course #1');
+    $students = classroom_get_students($course);
+    $this->assertTrue(empty($students));
+    classroom_register_student($student, $course);
+    $students = classroom_get_students($course);
+    $this->assertFalse(empty($students));
+    $this->assertEqual($student->uid, $students[0]->uid);
+  }
+
+  function testGetAssignments() {
+    $this->setupContentType('assignment');
+    $course = $this->createClassroomNode('course', 'Course #1');
+    $assignment = $this->createClassroomNode('assignment', 'Assignment #1');
+    // FIXME: maybe this createClassroomNode must set the 'course_nid'.
+    $assignment->classroom_assignment = array('course_nid' => $course->nid);
+    node_save($assignment);
+    $assignments = classroom_get_assignments($course);
+    $this->assertFalse(empty($assignments));
+    $this->assertEqual($assignment->nid, $assignments[0]->nid);
+  }
+
+  function testCourseCalculateFinalGrade() {
+    $this->setupContentType('assignment');
+    $this->setupContentType('response');
+
+    $start_date = time();
+    $end_date = time() + 172800;
+
+
+    $course = $this->createClassroomNode('course', 'Course #1',
+      array(
+        'classroom_course' => array(
+          'use_grade_percentages' => 0,
+          'unlimitedend' => 0,
+          'start_date' => array(
+            'day' => (int)strftime('%d', $start_date),
+            'month' => (int)strftime('%m', $start_date),
+            'year' => (int)strftime('%Y', $start_date),
+          ),
+          'end_date' => array(
+            'day' => (int)strftime('%d', $end_date),
+            'month' => (int)strftime('%m', $end_date),
+            'year' => (int)strftime('%Y', $end_date),
+          ),
+        ),
+      )
+    );
+
+    $teacher = $this->createTeacher(); 
+    $student = $this->createStudent();
+    classroom_register_teacher($teacher, $course);
+    classroom_register_student($student, $course);
+ 
+    $this->loginUser($teacher);
+
+   
+    //Assignments    
+    $edit = array(
+      'title' => 'Assignment #1',
+      'body' => 'Assignment with no end date',
+      'classroom_assignment[max_grade]' => 10,
+      'classroom_assignment[end_date][type]' => 2,
+    );
+    $content = $this->drupalPost('node/add/assignment', $edit, t('Save'),
+      array('query' => 'course_nid='.$course->nid));
+    $assignment = $this->drupalGetNodeByTitle('Assignment #1');
+    
+    $this->assertEqual(classroom_course_calculate_finalgrade($course, $student), 0, "The final grade is correct");
+
+    $edit = array(
+      'title' => 'Assignment #2',
+      'body' => 'Assignment with no end date',
+      'classroom_assignment[max_grade]' => 4,
+      'classroom_assignment[end_date][type]' => 2,
+    );
+    $content = $this->drupalPost('node/add/assignment', $edit, t('Save'),
+      array('query' => 'course_nid='.$course->nid));
+    $assignment2 = $this->drupalGetNodeByTitle('Assignment #2');
+    
+    $this->assertEqual(classroom_course_calculate_finalgrade($course, $student), 0, "The final grade is correct");
+   
+    $this->loginUser($student);
+ 
+    //Responses
+    $edit = array(
+      'title' => 'Response #1',
+      'body' => 'Body of reponse #1'
+    );
+    $content = $this->drupalPost('node/add/response', $edit, t('Save'),
+      array('query' => 'assignment_nid='.$assignment->nid));
+    $response = $this->drupalGetNodeByTitle('Response #1');
+
+    $this->assertEqual(classroom_course_calculate_finalgrade($course), 0, "The final grade is correct");
+ 
+    $edit = array(
+      'title' => 'Response #2',
+      'body' => 'Body of response #2'
+    );
+    $content = $this->drupalPost('node/add/response', $edit, t('Save'),
+      array('query' => 'assignment_nid='.$assignment2->nid));
+    $response2 = $this->drupalGetNodeByTitle('Response #2');
+
+    $this->assertEqual(classroom_course_calculate_finalgrade($course), 0, "The final grade is correct");
+ 
+    $this->loginUser($teacher);
+
+    //Evaluates
+    $edit = array( 
+      'classroom_response[grade]' => 8
+    );
+    
+    $content = $this->drupalPost('node/'.$response->nid.'/edit', $edit, t('Save'));
+    $response = $this->drupalGetNodeByTitle('Response #1');
+
+    $this->assertEqual(classroom_course_calculate_finalgrade($course, $student), 4, "The final grade is correct");
+ 
+    $edit = array( 
+      'classroom_response[grade]' => 2
+    ); 
+    $content = $this->drupalPost('node/'.$response2->nid.'/edit', $edit, t('Save'));
+    $response2 = $this->drupalGetNodeByTitle('Response #2');
+
+    $this->assertEqual(classroom_course_calculate_finalgrade($course, $student), 6.5, "The final grade is correct");
+ 
+
+    $this->loginUser($student);
+
+    $this->assertEqual(classroom_course_calculate_finalgrade($course), 6.5, "The final grade is correct");
+ 
+  }
+}

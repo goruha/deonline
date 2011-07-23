@@ -1,0 +1,761 @@
+<?php
+// $Id: assignments.test,v 1.6 2010/03/18 21:09:53 osoh Exp $
+
+class ClassroomAssignmentsTestCase extends ClassroomTestCase {
+  public static function getInfo() {
+    return array(
+      'name' => t('Assignments functions'),
+      'desc' => t('Test for assignments.'),
+      'group' => t('Classroom tests'),
+    );
+  }
+
+  function setUp($modules = null) {
+    parent::setUp($modules);
+    $this->setupContentType('course');
+    $this->assignmentType = $this->setupContentType('assignment');
+    $this->setupContentType('response');
+    $this->teacher = $this->createTeacher();
+    $this->student = $this->createStudent();
+
+    $start_date = time();
+    $end_date = time() + 172800;
+
+    $this->course_without_grade = $this->createClassroomNode('course', 'Course #1',
+      array(
+        'classroom_course' => array(
+          'use_grade_percentages' => 0,
+          'unlimited' => 0,
+          'start_date' => array(
+            'day' => (int)strftime('%d', $start_date),
+            'month' => (int)strftime('%m', $start_date),
+            'year' => (int)strftime('%Y', $start_date),
+          ),
+          'end_date' => array(
+            'day' => (int)strftime('%d', $end_date),
+            'month' => (int)strftime('%m', $end_date),
+            'year' => (int)strftime('%Y', $end_date),
+          ),
+        ),
+      )
+    );
+
+    classroom_register_teacher($this->teacher, $this->course_without_grade);
+    classroom_register_student($this->student, $this->course_without_grade);
+    
+    $this->course_without_date_and_grade = $this->createClassroomNode('course', 'Course #2',
+      array(
+        'classroom_course' => array(
+          'use_grade_percentages' => 0,
+          'unlimitedend' => 1,
+          'start_date' => array(
+            'day' => (int)strftime('%d', $start_date),
+            'month' => (int)strftime('%m', $start_date),
+            'year' => (int)strftime('%Y', $start_date),           
+          ),
+
+        )
+      )
+    );
+
+    classroom_register_teacher($this->teacher, $this->course_without_date_and_grade);
+    classroom_register_student($this->student, $this->course_without_date_and_grade);
+ 
+ } 
+
+  /**
+   * Create an assignment node
+   * without percentage when a course has not
+   * percentage.
+   */
+
+  function testCreateAssignmentWithoutPercentage() {
+    $this->loginUser($this->teacher);
+    $end_date = time() + 86400;
+
+    $edit = array(
+      'title' => 'Assignment #1',
+      'body'  => 'Body for assignment #1',
+      'classroom_assignment[max_grade]' => 10);
+
+    $edit += $this->dateToDateTimeform($end_date, 'assignment', 'end_date][date');
+    $content = $this->drupalPost('node/add/assignment', $edit, t('Save'), 
+    array('query' => 'course_nid='.$this->course_without_grade->nid));
+
+    $assignment = $this->drupalGetNodeByTitle('Assignment #1');
+    $this->assertTrue(is_object($assignment));
+  }
+
+  /**
+   * Create an assignment node with a weight greater than 100%.
+   */
+  function testCreateAssignmentExceedingPercentage() {
+    $this->loginUser($this->teacher);
+
+    $course = $this->createClassroomNode('course', 'Course #1',
+      array(
+        'classroom_course' => array(
+          'use_grade_percentages' => TRUE,
+          'unlimited' => TRUE,
+        ),
+      )
+    );
+    classroom_register_teacher($this->teacher, $course);
+
+    $edit = array(
+      'title' => 'Assignment #1',
+      'body'  => 'Body for assignment #1',
+      'classroom_assignment[max_grade]' => 10,
+      'classroom_assignment[grade_percentage]' => 120,
+    );
+
+    $edit += $this->dateToDateTimeform($end_date, 'assignment', 'end_date][date');
+    $content = $this->drupalGet('node/add/assignment', array('query' => 'course_nid='.$course->nid));
+    $content = $this->drupalPost('node/add/assignment', $edit, t('Save'), 
+      array('query' => 'course_nid='.$course->nid));
+    $this->assertText("The sum of the percentages of all assignments must not exceed 100%");
+  }
+
+  /**
+   * Create an assigment node
+   * associated to a course that not exists
+   */
+
+  function testCreateAssignmentWithCourseInexistent() {
+    $this->loginUser($this->teacher);
+    $end_date = $this->course_without_grade->classroom_course['start_t'];
+    
+    $contet = $this->drupalGet('node/add/assignment', array(), array('query' => 'course_nid='.
+      'course_nid='.($this->course_without_grade->nid+4)));
+
+    $this->assertResponse(200); 
+    $assignment = $this->drupalGetNodeByTitle('Assignment #2');
+    $this->assertFalse(is_object($assignment));
+  }
+
+  /**
+   * Test that a student could not create an 
+   * assignment
+   */
+
+  function testCreateAssignmentByStudent() {
+    $this->loginUser($this->student);
+    $end_date = $this->course_without_grade->classroom_course['start_t'];
+
+    $content = $this->drupalGet('node/add/assignment', 
+      array('query' => 'course_nid='.$this->course_without_grade->nid));
+
+    $this->assertText(t('Access denied')); 
+    $assignment = $this->drupalGetNodeByTitle('Assignment #1');
+    $this->assertFalse(is_object($assignment));
+  }
+
+  /**
+   * Test to create an assignment before course start date
+   */
+  function testCreateAssignmentBeforeCourseStartDate() {
+    $this->loginUser($this->teacher);
+    $end_date = $this->course_without_grade->classroom_course['start_t'] - 86400;
+
+    $edit = array(
+      'title' => 'Assignment #3',
+      'body'  => 'Body for assignment #3',
+      'classroom_assignment[max_grade]' => 10);
+
+    $edit += $this->dateToDateTimeform($end_date, 'assignment', 'end_date][date');
+    $content = $this->drupalPost('node/add/assignment', $edit, t('Save'), 
+    array('query' => 'course_nid='.$this->course_without_grade->nid));
+
+    $this->assertText(t('The assignment could not end before the course begins'));
+    $assignment = $this->drupalGetNodeByTitle('Assignment #3');
+    $this->assertFalse(is_object($assignment));
+  }
+
+  /**
+   * Test to create an assignment after course end date
+   */
+  function testCreateAssignmentAfterCourseEndDate() {
+    $this->loginUser($this->teacher);
+    $end_date = $this->course_without_grade->classroom_course['end_t'] + 86400;
+
+    $edit = array(
+      'title' => 'Assignment #4',
+      'body'  => 'Body for assignment #4',
+      'classroom_assignment[max_grade]' => 10);
+
+    $edit += $this->dateToDateTimeform($end_date, 'assignment', 'end_date][date');
+    $content = $this->drupalPost('node/add/assignment', $edit, t('Save'), 
+    array('query' => 'course_nid='.$this->course_without_grade->nid));
+
+    $this->assertText(t('The assignment could not end after the course end')); 
+    $assignment = $this->drupalGetNodeByTitle('Assignment #4');
+    $this->assertFalse(is_object($assignment));
+  }
+
+  /**
+   * Test to create an assignment 
+   */
+  function testCreateAssignmentCourseUnlimited() {
+    $this->loginUser($this->teacher);
+    $end_date = (int)( $this->course_without_grade->classroom_course['start_t'] + 86400);
+
+    $edit = array(
+      'title' => 'Assignment #5',
+      'body'  => 'Body for assignment #5',
+      'classroom_assignment[max_grade]' => 10);
+
+    $edit += $this->dateToDateTimeform($end_date, 'assignment', 'end_date][date');
+    $content = $this->drupalPost('node/add/assignment', $edit, t('Save'), 
+    array('query' => 'course_nid='.$this->course_without_date_and_grade->nid));
+
+    $assignment = $this->drupalGetNodeByTitle('Assignment #5');
+    $this->assertTrue(is_object($assignment));
+  }
+
+  /**
+   * Test to create an assignment with relative dates
+   * in a course with limited dates
+   */
+  function testCreateAssignmentWithRelativeDatesCourseLimited() {
+    $this->loginUser($this->teacher);
+
+    $edit = array(
+      'title' => 'Assignment #6',
+      'body' => 'Assignment with relative end date',
+      'classroom_assignment[max_grade]' => 10,
+      'classroom_assignment[end_date][type]' => 1,
+      'classroom_assignment[end_date][relative_end]' => 5,
+    );
+
+    $end_date = (int)( $this->course_without_grade->classroom_course['start_t'] + 86400);
+    $edit += $this->dateToDateTimeform($end_date, 'assignment', 'end_date][date');
+
+    $content = $this->drupalPost('node/add/assignment', $edit, t('Save'),
+      array('query' => 'course_nid='.$this->course_without_grade->nid));
+
+    $assignment = $this->drupalGetNodeByTitle('Assignment #6');
+    $this->assertTrue(is_object($assignment));
+    $this->assertEqual($assignment->title, 'Assignment #6','Title is correct');
+    $this->assertEqual($assignment->body, '<!--break-->Assignment with relative end date','Body is correct');
+    $this->assertEqual($assignment->classroom_assignment['max_grade'], 10, 'Max grade is correct');
+    $this->assertEqual($assignment->classroom_assignment['end_date']['type'],1,'End date type is correct');
+    $this->assertEqual($assignment->classroom_assignment['end_date']['relative_end'], 5,'Relative end date is correct');
+    $this->assertNull($assignment->classroom_assignment['end_t'],'End is Null');
+    $this->assertNull($assignment->classroom_assignment['relative_end'],'Relative end is Null');
+    $this->assertNull($assignment->classroom_assignment['end_date']['date'], 'End_date date is Null');
+  }
+
+  /**
+   * Test to create an assignment with no end dates
+   * in a course with limited dates
+   */
+  function testCreateAssignmentWithNoDateCourseLimited() {
+    $this->loginUser($this->teacher);
+
+    $edit = array(
+      'title' => 'Assignment #7',
+      'body' => 'Assignment with no end date',
+      'classroom_assignment[max_grade]' => 10,
+      'classroom_assignment[end_date][type]' => 2,
+      'classroom_assignment[end_date][relative_end]' => 5,
+    );
+
+    $end_date = (int)( $this->course_without_grade->classroom_course['start_t'] + 86400);
+    $edit += $this->dateToDateTimeform($end_date, 'assignment', 'end_date][date');
+
+    $content = $this->drupalPost('node/add/assignment', $edit, t('Save'),
+      array('query' => 'course_nid='.$this->course_without_grade->nid));
+
+    $assignment = $this->drupalGetNodeByTitle('Assignment #7');
+    $this->assertTrue(is_object($assignment));
+    $this->assertEqual($assignment->title, 'Assignment #7','Title is correct');
+    $this->assertEqual($assignment->body, '<!--break-->Assignment with no end date','Body is correct');
+    $this->assertEqual($assignment->classroom_assignment['max_grade'], 10, 'Max grade is correct');
+    $this->assertEqual($assignment->classroom_assignment['end_date']['type'],2,'End date type is correct');
+    $this->assertNull($assignment->classroom_assignment['end_t'],'End is Null');
+    $this->assertNull($assignment->classroom_assignment['relative_end'],'Relative end is Null');
+    $this->assertNull($assignment->classroom_assignment['end_date']['date'], 'End_date date is Null');
+    $this->assertNull($assignment->classroom_assignment['end_date']['relative_end'],'Relative end date is Null');
+  }
+
+  /**
+   * Test to create an assignment with fixed dates
+   * in a course with limited dates
+   */
+  function testCreateAssignmentWithFixedDatesCourseLimited() {
+    $this->loginUser($this->teacher);
+
+    $edit = array(
+      'title' => 'Assignment #8',
+      'body' => 'Assignment with fixed end date',
+      'classroom_assignment[max_grade]' => 10,
+      'classroom_assignment[end_date][type]' => 0,
+      'classroom_assignment[end_date][relative_end]' => 5,
+    );
+
+    $end_date = (int)( $this->course_without_grade->classroom_course['start_t'] + 86400);
+    $date = $this->dateToDateTimeForm($end_date, 'assignment', 'end_date][date');
+    $edit += $this->dateToDateTimeform($end_date, 'assignment', 'end_date][date');
+
+
+    $content = $this->drupalPost('node/add/assignment', $edit, t('Save'),
+      array('query' => 'course_nid='.$this->course_without_grade->nid));
+
+    $assignment = $this->drupalGetNodeByTitle('Assignment #8');
+    $this->assertTrue(is_object($assignment));
+    $this->assertEqual($assignment->title, 'Assignment #8','Title is correct');
+    $this->assertEqual($assignment->body, '<!--break-->Assignment with fixed end date','Body is correct');
+    $this->assertEqual($assignment->classroom_assignment['max_grade'], 10, 'Max grade is correct');
+    $this->assertEqual($assignment->classroom_assignment['end_date']['type'],0,'End date type is correct');
+    $this->assertEqual($assignment->classroom_assignment['end_date']['date']['day'], 
+      $date["classroom_assignment[end_date][date][day]"],'End_date_day date is correct'); 
+    $this->assertEqual($assignment->classroom_assignment['end_date']['date']['month'], 
+      $date["classroom_assignment[end_date][date][month]"],'End_date_month date is correct'); 
+    $this->assertEqual($assignment->classroom_assignment['end_date']['date']['year'], 
+      $date["classroom_assignment[end_date][date][year]"],'End_date_year date is correct'); 
+    $this->assertNull($assignment->classroom_assignment['end_t'],'End is Null');
+    $this->assertNull($assignment->classroom_assignment['relative_end'],'Relative end is Null');
+    $this->assertNull($assignment->classroom_assignment['end_date']['relative_end'], 'Relative end date is Null');
+  }
+
+  /**
+   * Test update an assignment with relative dates
+   * in a course with limited dates
+   */
+  function testUpdateAssigmentWithRelativeDateCourseLimited() {
+    $this->loginUser($this->teacher);
+
+    //From relative end date  to no end date
+    $edit = array(
+      'title' => 'Assignment #9',
+      'body' => 'Assignment with relative end date',
+      'classroom_assignment[max_grade]' => 10,
+      'classroom_assignment[end_date][type]' => 1,
+      'classroom_assignment[end_date][relative_end]' => 5,
+    );
+
+    $end_date = (int)( $this->course_without_grade->classroom_course['start_t'] + 86400);
+    $edit += $this->dateToDateTimeform($end_date, 'assignment', 'end_date][date');
+
+    $content = $this->drupalPost('node/add/assignment', $edit, t('Save'),
+      array('query' => 'course_nid='.$this->course_without_grade->nid));
+
+    $assignment = $this->drupalGetNodeByTitle('Assignment #9');
+    $this->assertTrue(is_object($assignment));
+
+    $edit = array(
+      'title' => 'Assignment #10',
+      'body' => 'Assignment with no end date',
+      'classroom_assignment[max_grade]' => 8,
+      'classroom_assignment[end_date][type]' => 2,
+      'classroom_assignment[end_date][relative_end]' => 5,
+    );
+
+    $end_date = (int)( $this->course_without_grade->classroom_course['start_t'] + 86400);
+    $edit += $this->dateToDateTimeform($end_date, 'assignment', 'end_date][date');
+
+    $content = $this->drupalPost('node/'.$assignment->nid.'/edit', $edit, t('Save'));
+    var_dump($content);
+
+    $assignment = $this->drupalGetNodeByTitle('Assignment #10');
+    $this->assertTrue(is_object($assignment));
+
+    $this->assertEqual($assignment->title, 'Assignment #10','Title is correct');
+    $this->assertEqual($assignment->body, '<!--break-->Assignment with no end date','Body is correct');
+    $this->assertEqual($assignment->classroom_assignment['max_grade'], 8, 'Max grade is correct');
+    $this->assertEqual($assignment->classroom_assignment['end_date']['type'],2,'End date type is correct');
+    $this->assertNull($assignment->classroom_assignment['end_t'],'End is Null');
+    $this->assertNull($assignment->classroom_assignment['relative_end'],'Relative end is Null');
+    $this->assertNull($assignment->classroom_assignment['end_date']['date'], 'End_date date is Null');
+    $this->assertNull($assignment->classroom_assignment['end_date']['relative_end'],'Relative end date is Null');
+
+
+    //From relative end date to fixed end date
+
+    $edit = array(
+      'title' => 'Assignment #9',
+      'body' => 'Assignment with relative end date',
+      'classroom_assignment[max_grade]' => 10,
+      'classroom_assignment[end_date][type]' => 1,
+      'classroom_assignment[end_date][relative_end]' => 5,
+    );
+
+    $end_date = (int)( $this->course_without_grade->classroom_course['start_t'] + 86400);
+    $edit += $this->dateToDateTimeform($end_date, 'assignment', 'end_date][date');
+
+    $content = $this->drupalPost('node/add/assignment', $edit, t('Save'),
+      array('query' => 'course_nid='.$this->course_without_grade->nid));
+
+    $assignment = $this->drupalGetNodeByTitle('Assignment #9');
+    $this->assertTrue(is_object($assignment));
+
+    $edit = array(
+      'title' => 'Assignment #11',
+      'body' => 'Assignment with fixed end date',
+      'classroom_assignment[max_grade]' => 5,
+      'classroom_assignment[end_date][type]' => 0,
+      'classroom_assignment[end_date][relative_end]' => 5,
+    );
+
+    $end_date = (int)( $this->course_without_grade->classroom_course['start_t'] + 86400);
+    $date = $this->dateToDateTimeForm($end_date, 'assignment', 'end_date][date'); 
+    $edit += $this->dateToDateTimeform($end_date, 'assignment', 'end_date][date');
+
+    $content = $this->drupalPost('node/'.$assignment->nid.'/edit', $edit, t('Save'));
+
+    $assignment = $this->drupalGetNodeByTitle('Assignment #11');
+
+    $this->assertTrue(is_object($assignment));
+    $this->assertEqual($assignment->title, 'Assignment #11','Title is correct');
+    $this->assertEqual($assignment->body, '<!--break-->Assignment with fixed end date','Body is correct');
+    $this->assertEqual($assignment->classroom_assignment['max_grade'], 5, 'Max grade is correct');
+    $this->assertEqual($assignment->classroom_assignment['end_date']['type'],0,'End date type is correct');
+    $this->assertEqual($assignment->classroom_assignment['end_date']['date']['day'], 
+      $date["classroom_assignment[end_date][date][day]"],'End_date_day date is correct'); 
+    $this->assertEqual($assignment->classroom_assignment['end_date']['date']['month'], 
+      $date["classroom_assignment[end_date][date][month]"],'End_date_month date is correct'); 
+    $this->assertEqual($assignment->classroom_assignment['end_date']['date']['year'], 
+      $date["classroom_assignment[end_date][date][year]"],'End_date_year date is correct'); 
+    $this->assertNull($assignment->classroom_assignment['end_t'],'End is Null');
+    $this->assertNull($assignment->classroom_assignment['relative_end'],'Relative end is Null');
+    $this->assertNull($assignment->classroom_assignment['end_date']['relative_end'], 'Relative end date is Null');
+  }
+
+
+  /**
+   * Test update of an assignment with no end date 
+   * in a course with limited dates
+   */
+  function testUpdateAssignmentWithNoDateCourseLimited() {
+    $this->loginUser($this->teacher);
+
+
+    // Update from no date to fixed date
+    $edit = array(
+      'title' => 'Assignment #7',
+      'body' => 'Assignment with no end date',
+      'classroom_assignment[max_grade]' => 10,
+      'classroom_assignment[end_date][type]' => 2,
+      'classroom_assignment[end_date][relative_end]' => 5,
+    );
+
+    $end_date = (int)( $this->course_without_grade->classroom_course['start_t'] + 86400);
+    $edit += $this->dateToDateTimeform($end_date, 'assignment', 'end_date][date');
+
+    $content = $this->drupalPost('node/add/assignment', $edit, t('Save'),
+      array('query' => 'course_nid='.$this->course_without_grade->nid));
+
+    $assignment = $this->drupalGetNodeByTitle('Assignment #7');
+    $this->assertTrue(is_object($assignment));
+
+
+    $edit = array(
+      'title' => 'Assignment #12',
+      'body' => 'Assignment with fixed end date',
+      'classroom_assignment[max_grade]' => 5,
+      'classroom_assignment[end_date][type]' => 0,
+      'classroom_assignment[end_date][relative_end]' => 5,
+    );
+
+    $end_date = (int)( $this->course_without_grade->classroom_course['start_t'] + 86400);
+    $date = $this->dateToDateTimeForm($end_date, 'assignment', 'end_date][date');  
+    $edit += $this->dateToDateTimeform($end_date, 'assignment', 'end_date][date');
+
+    $content = $this->drupalPost('node/'.$assignment->nid.'/edit', $edit, t('Save'));
+
+    $assignment = $this->drupalGetNodeByTitle('Assignment #12');
+
+    $this->assertTrue(is_object($assignment));
+    $this->assertEqual($assignment->title, 'Assignment #12','Title is correct');
+    $this->assertEqual($assignment->body, '<!--break-->Assignment with fixed end date','Body is correct');
+    $this->assertEqual($assignment->classroom_assignment['max_grade'], 5, 'Max grade is correct');
+    $this->assertEqual($assignment->classroom_assignment['end_date']['type'],0,'End date type is correct');
+    $this->assertEqual($assignment->classroom_assignment['end_date']['date']['day'], 
+      $date["classroom_assignment[end_date][date][day]"],'End_date_day date is correct'); 
+    $this->assertEqual($assignment->classroom_assignment['end_date']['date']['month'], 
+      $date["classroom_assignment[end_date][date][month]"],'End_date_month date is correct'); 
+    $this->assertEqual($assignment->classroom_assignment['end_date']['date']['year'], 
+      $date["classroom_assignment[end_date][date][year]"],'End_date_year date is correct'); 
+    $this->assertNull($assignment->classroom_assignment['end_t'],'End is Null');
+    $this->assertNull($assignment->classroom_assignment['relative_end'],'Relative end is Null');
+
+
+    // Update from no date to relative date
+    $edit = array(
+      'title' => 'Assignment #7',
+      'body' => 'Assignment with no end date',
+      'classroom_assignment[max_grade]' => 10,
+      'classroom_assignment[end_date][type]' => 2,
+      'classroom_assignment[end_date][relative_end]' => 5,
+    );
+
+    $end_date = (int)( $this->course_without_grade->classroom_course['start_t'] + 86400);
+    $edit += $this->dateToDateTimeform($end_date, 'assignment', 'end_date][date');
+
+    $content = $this->drupalPost('node/add/assignment', $edit, t('Save'),
+      array('query' => 'course_nid='.$this->course_without_grade->nid));
+
+    $assignment = $this->drupalGetNodeByTitle('Assignment #7');
+    $this->assertTrue(is_object($assignment));
+
+
+    $edit = array(
+      'title' => 'Assignment #13',
+      'body' => 'Assignment with relative end date',
+      'classroom_assignment[max_grade]' => 5,
+      'classroom_assignment[end_date][type]' => 1,
+      'classroom_assignment[end_date][relative_end]' => 5,
+    );
+
+    $end_date = (int)( $this->course_without_grade->classroom_course['start_t'] + 86400);
+    $edit += $this->dateToDateTimeform($end_date, 'assignment', 'end_date][date');
+
+    $content = $this->drupalPost('node/'.$assignment->nid.'/edit', $edit, t('Save'));
+
+    $assignment = $this->drupalGetNodeByTitle('Assignment #13');
+    $this->assertTrue(is_object($assignment));
+    $this->assertEqual($assignment->title, 'Assignment #13','Title is correct');
+    $this->assertEqual($assignment->body, '<!--break-->Assignment with relative end date','Body is correct');
+    $this->assertEqual($assignment->classroom_assignment['max_grade'], 5, 'Max grade is correct');
+    $this->assertEqual($assignment->classroom_assignment['end_date']['type'],1,'End date type is correct');
+    $this->assertEqual($assignment->classroom_assignment['end_date']['relative_end'], 5,'Relative end date is correct');
+    $this->assertNull($assignment->classroom_assignment['end_t'],'End is Null');
+    $this->assertNull($assignment->classroom_assignment['relative_end'],'Relative end is Null');
+    $this->assertNull($assignment->classroom_assignment['end_date']['date'], 'End_date date is Null');
+  }
+
+  /**
+   * Test update of an assignment with fixed end date 
+   * in a course with limited dates
+   */
+  function testUpdateAssignmentWithFixedDateCourseLimited() {
+    $this->loginUser($this->teacher);
+
+    // Update from fixed date to relative date
+    $edit = array(
+      'title' => 'Assignment #8',
+      'body' => 'Assignment with fixed end date',
+      'classroom_assignment[max_grade]' => 10,
+      'classroom_assignment[end_date][type]' => 0,
+      'classroom_assignment[end_date][relative_end]' => 5,
+    );
+
+    $end_date = (int)( $this->course_without_grade->classroom_course['start_t'] + 86400);
+    $date = $this->dateToDateTimeForm($end_date, 'assignment', 'end_date][date');
+    $edit += $this->dateToDateTimeform($end_date, 'assignment', 'end_date][date');
+
+
+    $content = $this->drupalPost('node/add/assignment', $edit, t('Save'),
+      array('query' => 'course_nid='.$this->course_without_grade->nid));
+
+
+   $assignment = $this->drupalGetNodeByTitle('Assignment #8');
+    $this->assertTrue(is_object($assignment));
+
+
+    $edit = array(
+      'title' => 'Assignment #14',
+      'body' => 'Assignment with relative end date',
+      'classroom_assignment[max_grade]' => 5,
+      'classroom_assignment[end_date][type]' => 1,
+      'classroom_assignment[end_date][relative_end]' => 5,
+    );
+
+    $end_date = (int)( $this->course_without_grade->classroom_course['start_t'] + 86400);
+    $edit += $this->dateToDateTimeform($end_date, 'assignment', 'end_date][date');
+
+    $content = $this->drupalPost('node/'.$assignment->nid.'/edit', $edit, t('Save'));
+
+    $assignment = $this->drupalGetNodeByTitle('Assignment #14');
+    $this->assertTrue(is_object($assignment));
+    $this->assertEqual($assignment->title, 'Assignment #14','Title is correct');
+    $this->assertEqual($assignment->body, '<!--break-->Assignment with relative end date','Body is correct');
+    $this->assertEqual($assignment->classroom_assignment['max_grade'], 5, 'Max grade is correct');
+    $this->assertEqual($assignment->classroom_assignment['end_date']['type'],1,'End date type is correct');
+    $this->assertEqual($assignment->classroom_assignment['end_date']['relative_end'], 5,'Relative end date is correct');
+    $this->assertNull($assignment->classroom_assignment['end_t'],'End is Null');
+    $this->assertNull($assignment->classroom_assignment['relative_end'],'Relative end is Null');
+    $this->assertNull($assignment->classroom_assignment['end_date']['date'], 'End_date date is Null');
+
+    // Update from fixed date to no end date
+    $edit = array(
+      'title' => 'Assignment #8',
+      'body' => 'Assignment with fixed end date',
+      'classroom_assignment[max_grade]' => 10,
+      'classroom_assignment[end_date][type]' => 0,
+      'classroom_assignment[end_date][relative_end]' => 5,
+    );
+
+    $end_date = (int)( $this->course_without_grade->classroom_course['start_t'] + 86400);
+    $date = $this->dateToDateTimeForm($end_date, 'assignment', 'end_date][date');
+    $edit += $this->dateToDateTimeform($end_date, 'assignment', 'end_date][date');
+
+
+    $content = $this->drupalPost('node/add/assignment', $edit, t('Save'),
+      array('query' => 'course_nid='.$this->course_without_grade->nid));
+
+
+    $assignment = $this->drupalGetNodeByTitle('Assignment #8');
+    $this->assertTrue(is_object($assignment));
+
+    $edit = array(
+      'title' => 'Assignment #15',
+      'body' => 'Assignment with no end date',
+      'classroom_assignment[max_grade]' => 8,
+      'classroom_assignment[end_date][type]' => 2,
+      'classroom_assignment[end_date][relative_end]' => 5,
+    );
+
+    $end_date = (int)( $this->course_without_grade->classroom_course['start_t'] + 86400);
+    $edit += $this->dateToDateTimeform($end_date, 'assignment', 'end_date][date');
+
+    $content = $this->drupalPost('node/'.$assignment->nid.'/edit', $edit, t('Save'));
+
+    $assignment = $this->drupalGetNodeByTitle('Assignment #15');
+    $this->assertTrue(is_object($assignment));
+
+    $this->assertEqual($assignment->title, 'Assignment #15','Title is correct');
+    $this->assertEqual($assignment->body, '<!--break-->Assignment with no end date','Body is correct');
+    $this->assertEqual($assignment->classroom_assignment['max_grade'], 8, 'Max grade is correct');
+    $this->assertEqual($assignment->classroom_assignment['end_date']['type'],2,'End date type is correct');
+    $this->assertNull($assignment->classroom_assignment['end_t'],'End is Null');
+    $this->assertNull($assignment->classroom_assignment['relative_end'],'Relative end is Null');
+    $this->assertNull($assignment->classroom_assignment['end_date']['date'], 'End_date date is Null');
+    $this->assertNull($assignment->classroom_assignment['end_date']['relative_end'],'Relative end date is Null');
+
+  }
+
+  /**
+   * Test check timestamp
+   */
+  function testCheckTimestamp() {
+    $this->loginUser($this->teacher);
+
+    //Against an assignment with fixed date
+    $edit = array(
+      'title' => 'Assignment #16',
+      'body' => 'Assignment with fixed end date',
+      'classroom_assignment[max_grade]' => 10,
+      'classroom_assignment[end_date][type]' => 0,
+      'classroom_assignment[end_date][relative_end]' => 5,
+    );
+
+    $end_date = (int)( $this->course_without_grade->classroom_course['start_t'] + 86400);
+    $date = $this->dateToDateTimeForm($end_date, 'assignment', 'end_date][date');
+    $edit += $this->dateToDateTimeform($end_date, 'assignment', 'end_date][date');
+
+
+    $content = $this->drupalPost('node/add/assignment', $edit, t('Save'),
+      array('query' => 'course_nid='.$this->course_without_grade->nid));
+
+    $assignment = $this->drupalGetNodeByTitle('Assignment #16');
+    $this->assertTrue(is_object($assignment));
+
+    $valid_date = classroom_assignment_check_timestamp(($end_date-1400), $assignment);
+    $this->assertTrue($valid_date,'Time stamp check: Fixed date in range');
+
+    $valid_date = classroom_assignment_check_timestamp(($end_date+864000), $assignment);
+    $this->assertFalse($valid_date, 'Time stamp check: Fixed date out of range');
+
+
+
+    //Against an assignment with relative date
+    $edit = array(
+      'title' => 'Assignment #17',
+      'body' => 'Assignment with relative end date',
+      'classroom_assignment[max_grade]' => 10,
+      'classroom_assignment[end_date][type]' => 1,
+      'classroom_assignment[end_date][relative_end]' => 5,
+    );
+
+    $end_date = (int)( $this->course_without_grade->classroom_course['start_t'] + 86400);
+    $edit += $this->dateToDateTimeform($end_date, 'assignment', 'end_date][date');
+
+    $content = $this->drupalPost('node/add/assignment', $edit, t('Save'),
+      array('query' => 'course_nid='.$this->course_without_grade->nid));
+
+    $assignment = $this->drupalGetNodeByTitle('Assignment #17');
+    $this->assertTrue(is_object($assignment));
+
+    $valid_date = classroom_assignment_check_timestamp((time()+86400), $assignment);
+    $this->assertTrue($valid_date,'Time stamp check: Relative date in range');
+
+    $valid_date = classroom_assignment_check_timestamp((time()+864000), $assignment);
+    $this->assertFalse($valid_date, 'Time stamp check: Relative date out of range');
+
+
+    //Against an assignment with no date
+    $edit = array(
+      'title' => 'Assignment #18',
+      'body' => 'Assignment with no end date',
+      'classroom_assignment[max_grade]' => 10,
+      'classroom_assignment[end_date][type]' => 2,
+      'classroom_assignment[end_date][relative_end]' => 5,
+    );
+
+    $end_date = (int)( $this->course_without_grade->classroom_course['start_t'] + 86400);
+    $edit += $this->dateToDateTimeform($end_date, 'assignment', 'end_date][date');
+
+    $content = $this->drupalPost('node/add/assignment', $edit, t('Save'),
+      array('query' => 'course_nid='.$this->course_without_grade->nid));
+
+    $assignment = $this->drupalGetNodeByTitle('Assignment #18');
+    $this->assertTrue(is_object($assignment));
+ 
+    $valid_date = classroom_assignment_check_timestamp((time()+86400), $assignment);
+    $this->assertTrue($valid_date,'Time stamp check: No date in range');
+
+    $valid_date = classroom_assignment_check_timestamp((time()+864000), $assignment);
+    $this->assertTrue($valid_date, 'Time stamp check: No date out of range');
+
+  }
+
+ /**
+  * Test assignment calculate final grade
+  */
+  function testAssignmentFinalGradeWithoutPercentages() {
+    $this->loginUser($this->teacher);
+
+    //Assignment    
+    $edit = array(
+      'title' => 'Assignment #19',
+      'body' => 'Assignment with no end date',
+      'classroom_assignment[max_grade]' => 10,
+      'classroom_assignment[end_date][type]' => 2,
+    );
+    $content = $this->drupalPost('node/add/assignment', $edit, t('Save'),
+      array('query' => 'course_nid='.$this->course_without_grade->nid));
+    $assignment = $this->drupalGetNodeByTitle('Assignment #19');
+
+    //Test the final grade from a student with a teacher 
+    $this->assertEqual(classroom_assignment_calculate_finalgrade($assignment, $this->student), 0, "The final grade is correct"); 
+   
+    $this->loginUser($this->student);
+    //Test the final grade from a student with himself
+    $this->assertEqual(classroom_assignment_calculate_finalgrade($assignment, $this->student), 0, "The final grade is correct");
+ 
+    //Response
+    $edit = array(
+      'title' => 'Response #1',
+      'body' => 'Body of reponse #1'
+    );
+    $content = $this->drupalPost('node/add/response', $edit, t('Save'),
+      array('query' => 'assignment_nid='.$assignment->nid));
+
+    //Test the final grade from a student with himself with a response no graded yet
+    $this->assertEqual(classroom_assignment_calculate_finalgrade($assignment, $this->student), 0, "The final grade is correct");
+ 
+    $this->loginUser($this->teacher);
+    //Test the final grade from a student with a teacher with a response no graded yet
+    
+    $edit = array( 
+      'classroom_response[grade]' => 3
+    );
+    
+    $response = $this->drupalGetNodeByTitle('Response #1');
+    $content = $this->drupalPost('node/'.$response->nid.'/edit', $edit, t('Save'));
+    $response = $this->drupalGetNodeByTitle('Response #1');
+    $this->assertEqual(classroom_assignment_calculate_finalgrade($assignment, $this->student), 3, "The final grade is correct");
+  }
+}
+

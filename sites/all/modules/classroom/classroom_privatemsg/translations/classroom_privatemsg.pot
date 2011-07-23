@@ -1,0 +1,33 @@
+# $Id: classroom_privatemsg.pot,v 1.2 2010/01/12 14:40:30 osoh Exp $
+#
+# LANGUAGE translation of Drupal (classroom_privatemsg)
+# Copyright YEAR NAME <EMAIL@ADDRESS>
+# Generated from files:
+#  classroom_privatemsg/classroom_privatemsg.module: n/a
+#  classroom_privatemsg/classroom_privatemsg.info: n/a
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"POT-Creation-Date: 2010-01-12 14:20+0000\n"
+"PO-Revision-Date: YYYY-mm-DD HH:MM+ZZZZ\n"
+"Last-Translator: NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <EMAIL@ADDRESS>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+
+#: classroom_privatemsg/classroom_privatemsg.module:12
+msgid "Send message"
+msgstr ""
+
+#: classroom_privatemsg/classroom_privatemsg.info:0
+msgid "Classroom Privatemsg"
+msgstr ""
+
+#: classroom_privatemsg/classroom_privatemsg.info:0
+msgid "Provides classroom integration with Privatemsg module"
+msgstr ""
+

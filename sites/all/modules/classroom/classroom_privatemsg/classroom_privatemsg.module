@@ -1,0 +1,29 @@
+<?php
+
+/**
+ * Implementation of hook_classroom_user_links().
+ */
+function classroom_privatemsg_classroom_user_links($u, $back = NULL) {
+  global $user;
+
+  if ($u->uid != $user->uid) {
+    return array(
+      'classroom_privatemsg' => array(
+        l(t('Send message'), "messages/new/$u->uid", array('query' => "destination=$back"))
+      ),
+    );
+  }
+}
+
+/**
+ * Implementation of hook_classroom_perms().
+ */
+function classroom_privatemsg_classroom_perms() {
+  $perms = array('read privatemsg', 'write privatemsg');
+  return array(
+    'classroom_privatemsg' => array(
+      'teacher' => $perms,
+      'student' => $perms,
+    )
+  );
+}

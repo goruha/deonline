@@ -1,0 +1,69 @@
+<?php
+// $Id: classroom_signup.install,v 1.1 2009/07/27 14:14:06 osoh Exp $
+
+/**
+ * Implementation of hook_schema()
+ */
+function classroom_signup_schema() {
+  $schema['classroom_signup_request'] = array(
+    'description' => '',
+    'fields' => array(
+      'rid' => array(
+        'description' => 'Sign-up request ID',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE),
+      'created' => array(
+        'description' => 'The Unix timestamp when the request was created.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0),
+      'uid' => array(
+        'description' => 'User uid',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0),
+      'course_nid' => array(
+        'description' => 'Course nid',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0),
+      'status' => array(
+        'description' => 'Request status',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0),
+      'request_comment' => array(
+        'description' => '',
+        'type' => 'text',
+        'not null' => FALSE,
+        'default' => NULL),
+      'response_comment' => array(
+        'description' => '',
+        'type' => 'text',
+        'not null' => FALSE,
+        'default' => NULL),
+    ),
+    'primary key' => array('rid'),
+  );
+
+  return $schema;
+}
+
+/**
+ * Implementation of hook_install()
+ */
+function classroom_signup_install() {
+  drupal_install_schema('classroom_signup');
+}
+
+
+/**
+ * Implementation of hook_uninstall()
+ */
+function classroom_signup_uninstall() {
+  drupal_uninstall_schema('classroom_signup');
+}

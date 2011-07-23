@@ -1,0 +1,92 @@
+6.x-1.1
+
+  * Bug #806730 by bryzo: The topic number can't be duplicated!
+  * Improved PHP 5.3 support.  
+  * Added PostgreSQL support.
+  * Fixed some 'includes' statements in tests.
+  * Fixed forum_tid field since it couldn't be null.
+
+6.x-1.0
+
+  * Improved HTML code in 'my assignments' block
+  * "Possible: *" is replaced by "Maximum grade" (support request #742812 by Nick Fedchik).
+  * Added "Topics" title into the "Description" tab (support request #742750 by
+    Nick Fedchik).
+  * Improved HTML code in 'my assigments' block (bug report #703438 by natoya).
+  * Added a FAQ (from support request #730780 by drm).
+
+6.x-1.0-rc1
+
+  * Fixed the node/add URL generation (it was broken in some cases).
+  * Added basic e-mail notifications in classroom_signup module.
+  * Bug #677772 by manolopm: Course is repeated in My courses block.
+  * Bug #677782 by manolopm: The number of the topic could be repeated for the same course.
+  * Feature #657470 by ebtjoe: Use roles to access courses
+
+6.x-1.0-beta7
+
+  * Added the concept of course manager.
+  * UI improvements and fixes in Classroom Sign-up module.
+  * Feature #658330 by cross: add validation hook so user will see good
+    description of error.
+  * Bug #663094 by manolopm: Task percentage can overdue 100% in assignments.
+  * Feature #663092 by manolopm: Activate course menu by default.
+  * Fixed assignments list to show student's final grade.
+  * Fixed assignments updating when no topic is selected.
+  * Fixed the 'Answer' link when viewing a answered assignment.
+  * Fixes and refactoring related to breadcrumbs.
+  * Other minor bugfixes.
+
+6.x-1.0-beta6
+
+  * Support for topics: assignments and resources can be organized into topics.
+  * Fixed an issue in the assignments page which caused assignments to be shown multiple
+    times.
+  * Bug #596130: Fixed SQL error when using table prefixes.
+  * Bug #613344: fix an issue with nodes when using table prefixes.
+  * Feature #622314 by laserlight: The 'login' link is shown instead of 'sign up' when
+    user is anonymous
+  * Added a course's description page.
+  * Added a course's topics block.
+  * Added 'updated' and 'new' marks to assignments.
+  * More fixes in dates handling.
+  * Other minor bugfixes.
+  * Other minor UI improvements.
+
+6.x-1.0-beta5
+
+  * Fixed translations files in classroomquiz and classroom_privatemsg modules.
+  * Fixed the checking of grade percentages sum.
+  * Fixed links to 'answer assignment' (in assignments lists). Also, a new hook
+    classroom_response_url has been added.
+  * Added a responses tab to assignments. Teachers can assign grades in that tab.
+  * Some minor test suites improvements.
+
+6.x-1.0-beta4
+
+  * Fixed and improved the assistant to set up permissions. It now support
+    revoking permissions when classroom configuration changes.
+
+6.x-1.0-beta3
+
+	* Fixed #544344: Checkbox "use grade percentage" is now disabled in course
+	view.
+	* Fixed #544276: Added the concept of courses owners.
+	* Added a sort of assistant	to set up initial permissions (related to
+	#544276).
+	* Improved documentation.
+	* Fixed some minor bugs.
+
+6.x-1.0-beta2
+
+	* Fixed dates handling. They're now are stored as GMT.
+	* Fixed some translations.
+	* Fixed some issues in administration pages.
+	* Fixed classroom_signup integration.
+	* Fixed access to classroom_forum module.
+	* Fixed some interface issues.
+	* Fixed some bugs in the test suite.
+
+6.x-1.0-beta1
+
+	* Initial release.

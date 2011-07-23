@@ -1,0 +1,155 @@
+<?php
+// $Id: responses.test,v 1.1 2009/07/27 14:14:07 osoh Exp $
+
+class ClassroomResponsesTestCase extends ClassroomTestCase {
+  public static function getInfo() {
+    return array(
+      'name' => t('Responses functions'),
+      'desc' => t('Test for responses.'),
+      'group' => t('Responses tests'),
+    );
+  }
+
+  function setUp() {
+    parent::setUp();
+    $this->setupContentType('course');
+    $this->setupContentType('assignment');
+    $this->setupContentType('response');
+
+    $this->teacher = $this->createTeacher();
+    $this->student1 = $this->createStudent();
+    $this->student2 = $this->createStudent();
+
+    $start_date = time();
+    $end_date = time() + 864000;
+
+    $this->course_without_grade = $this->createClassroomNode('course', 'Course #1',
+      array(
+        'classroom_course' => array(
+          'use_grade_percentages' => 0,
+          'unlimited' => 0,
+          'start_date' => array(
+            'day' => (int)strftime('%d', $start_date),
+            'month' => (int)strftime('%m', $start_date),
+            'year' => (int)strftime('%Y', $start_date),
+          ),
+          'end_date' => array(
+            'day' => (int)strftime('%d', $end_date),
+            'month' => (int)strftime('%m', $end_date),
+            'year' => (int)strftime('%Y', $end_date),
+          ),
+        ),
+      )
+    );
+
+    classroom_register_teacher($this->teacher, $this->course_without_grade);
+    classroom_register_student($this->student1, $this->course_without_grade);
+    classroom_register_student($this->student2, $this->course_without_grade);
+
+    $this->loginUser($this->teacher);
+
+    //Assignment with a fixed end date
+    $edit = array(
+      'title' => 'Assignment #1',
+      'body' => 'Assignment with relative end date',
+      'classroom_assignment[max_grade]' => 10,
+      'classroom_assignment[end_date][type]' => 0,
+    );
+    $edit += $this->dateToDateTimeform(($end_date-1000), 'assignment', 'end_date][date');
+
+    $content = $this->drupalPost('node/add/assignment', $edit, t('Save'),
+      array('query' => 'course_nid='.$this->course_without_grade->nid));
+    $this->assignment_fixed_date = $this->drupalGetNodeByTitle('Assignment #1');
+    
+    //Assignment with a relative end date
+    $edit = array(
+      'title' => 'Assignment #2',
+      'body' => 'Assignment with relative end date',
+      'classroom_assignment[max_grade]' => 10,
+      'classroom_assignment[end_date][type]' => 1,
+      'classroom_assignment[end_date][relative_end]' => 5,
+    );
+
+    $content = $this->drupalPost('node/add/assignment', $edit, t('Save'),
+      array('query' => 'course_nid='.$this->course_without_grade->nid));
+    $this->assignment_relative_date = $this->drupalGetNodeByTitle('Assignment #2');
+  
+    //Assignment with a no end date
+    $edit = array(
+      'title' => 'Assignment #3',
+      'body' => 'Assignment with no end date',
+      'classroom_assignment[max_grade]' => 10,
+      'classroom_assignment[end_date][type]' => 2,
+    );
+
+    $content = $this->drupalPost('node/add/assignment', $edit, t('Save'),
+      array('query' => 'course_nid='.$this->course_without_grade->nid));
+    $this->assignment_no_end_date = $this->drupalGetNodeByTitle('Assignment #3');
+ 
+ } 
+
+  /**
+   * Create a valid response
+   */
+
+  function testCreateAValidResponse() {
+    $this->loginUser($this->student1);
+
+    //Response with fixed date
+    $edit = array(
+      'title' => 'Response #1',
+      'body' => 'Body of reponse #1'
+    );
+    $content = $this->drupalPost('node/add/response', $edit, t('Save'),
+      array('query' => 'assignment_nid='.$this->assignment_fixed_date->nid));
+    
+    $response = $this->drupalGetNodeByTitle('Response #1');
+    $this->assertTrue(is_object($response));
+
+    //Response with relative date
+    $edit = array(
+      'title' => 'Response #2',
+      'body' => 'Body of reponse #2'
+    );
+    $content = $this->drupalPost('node/add/response', $edit, t('Save'),
+      array('query' => 'assignment_nid='.$this->assignment_relative_date->nid));
+
+    $response = $this->drupalGetNodeByTitle('Response #2');
+    $this->assertTrue(is_object($response));
+
+
+    //Response with no date
+    $edit = array(
+      'title' => 'Response #3',
+      'body' => 'Body of reponse #3'
+    );
+    $content = $this->drupalPost('node/add/response', $edit, t('Save'),
+      array('query' => 'assignment_nid='.$this->assignment_no_end_date->nid));
+
+    $response = $this->drupalGetNodeByTitle('Response #3');
+    $this->assertTrue(is_object($response));
+  }
+
+  function testGetStudentResponse() {
+    $course = $this->createClassroomNode('course', 'Course #1');
+
+    // Assignment
+    $assignment = $this->createClassroomNode('assignment', 'Assignment #1');
+    // FIXME: maybe this createClassroomNode must set the 'course_nid'.
+    $assignment->classroom_assignment = array('course_nid' => $course->nid);
+    node_save($assignment);
+
+    // Response
+    $more = array('classroom_response' => array('assignment_nid' => $assignment->nid));
+    $orig_response = $this->createClassroomNode('response', 'Response #1');
+    // FIXME: maybe this createClassroomNode must set the 'assignment_nid'.
+    $orig_response->classroom_response = array('assignment_nid' => $assignment->nid);
+    $orig_response->uid = $this->student1->uid;
+    node_save($orig_response);
+
+    $response = classroom_get_response($assignment, $this->student1);
+    $this->assertTrue($response);
+    $this->assertEqual($orig_response->nid, $response->nid);
+  }
+}
+

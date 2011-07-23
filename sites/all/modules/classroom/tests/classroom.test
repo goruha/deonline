@@ -1,0 +1,275 @@
+<?php
+// $Id: classroom.test,v 1.7 2009/12/21 13:02:09 osoh Exp $
+
+class ClassroomTestCase extends DrupalWebTestCase {
+
+  function setUp($module = NULL) {
+    if ($module) {
+      if (is_array($module)) {
+        parent::setUp('classroom');
+        drupal_install_modules($module);
+      }
+      else {
+        parent::setUp('classroom', $module);
+      }
+    } else {
+      parent::setUp('classroom');
+    }
+  }
+
+  /**
+   * Set the types configuration
+   * FIXME: Maybe it must use the same function that Drupal when setting this
+   * value classroom administration form.
+   *
+   * @param $classroom_type
+   *   Classroom type.
+   * @param $set_types
+   *   Node types that could be used as $classroom_type.
+   * @param $unset_types
+   *   Node types that couldn't be used as $classroom_type.
+   */
+  function setTypesFor($classroom_type, $set_types = array(), $unset_types = array()) {
+    $types = array();
+    foreach ($set_types as $type) {
+      $types[$type] = $type;
+    }
+    foreach ($unset_types as $type) {
+      $types[$type] = 0;
+    }
+    variable_set("classroom_{$classroom_type}_types", $types);
+  }
+
+  /**
+   * Create a classroom node (course, assignment, response or resource).
+   *
+   * @param $type
+   *   Classroom type (course, assignment, response or resource).
+   * @param $title
+   *   Course title.
+   * @node_params
+   *   Additional params for drupalCreateNode function.
+   * @return
+   *   The created classroom node.
+   */
+  function createClassroomNode($type, $title, $node_params = array()) {
+    $types = array_keys(_classroom_get_types_for($type));
+    $node_type = $types[0];
+    $node_params['type'] = $node_type;
+    $node_params['title'] = $title;
+    return $this->drupalCreateNode($node_params);
+  }
+
+  /**
+   * Setup a classroom content type. It creates a content type and
+   * associates it to classroom content type.
+   *
+   * @param $type
+   *   Classroom content type.
+   * @param $name
+   *   Content type name (optional).
+   * @return
+   *   The created content type.
+   */
+  function setupContentType($type, $name = NULL) {
+    if (!$name) {
+      $name = $type;
+    }
+    $content_type = $this->drupalCreateContentType(array(
+      'type' => $name,
+      'name' => $name)
+    );
+    $this->setTypesFor($type, array($name));
+    return $content_type;
+  }
+
+  /**
+   * Creates a classroom administrator.
+   * TODO: some permissions are missing.
+   *
+   * @param $types
+   *   Array with the name of the node type that the admin could create/edit/remove
+   * @return
+   *   The new user.
+   */
+  function createAdmin( $types = array('course'), $aditionalsPerms = array() ) {
+    $perms = array('access content', 'access classroom',
+      'administer classroom');
+    if (($types != array()) && (! array_key_exists('course', $types)))
+      array_push($types, 'course');
+    
+    foreach ($types as $type) {
+      $perms[] = 'create '.$type.' content';
+      $perms[] = 'delete any '.$type.' content';
+      $perms[] = 'edit any '.$type.' content';
+    }
+
+    $perms = array_merge($perms, $aditionalsPerms);
+    return $this->drupalCreateUser($perms);
+  }
+
+  /**
+   * Creates a classroom teacher.
+   *
+   * @param $aditionalsPerms
+   *   Array with aditionals perms to be added to the teacher role
+   *
+   * @return
+   *   The new user.
+   */
+  function createTeacher($aditionalsPerms = array()) {
+    $types = array_keys(node_get_types('types'));
+    $perms = array('access content', 'access classroom');
+
+    if (in_array('assignment', $types)) {
+      $perms[] = 'create assignment content';
+      $perms[] = 'edit any assignment content';
+      $perms[] = 'delete any assignment content';
+    }
+
+    if (in_array('response', $types)) {
+      $perms[] = 'edit any response content';
+    }
+
+    $perms = array_merge ($perms, $aditionalsPerms);
+
+    return $this->drupalCreateUser($perms);
+  }
+
+  /**
+   * Creates a classroom student.
+   *
+   * @param $aditionalsPerms
+   *   Array with aditionals perms to be added to the student role
+   * @return
+   *   The new user.
+   */
+  function createStudent($aditionalsPerms = array()) {
+    $types = array_keys(node_get_types('types'));
+    $perms = array('access content', 'access classroom');
+
+    if (in_array('response', $types)) {
+      $perms[] = 'create response content';
+      $perms[] = 'edit own response content';
+      $perms[] = 'delete own response content';
+    }
+
+    $perms = array_merge($perms, $aditionalsPerms);
+
+    return $this->drupalCreateUser($perms);
+  }
+
+  /**
+   * Convert a php date into a classroom's form datetime specification.
+   * For example:
+   *  array(
+   *   'classroom_course[start_date][day]' => 1,
+   *   'classroom_course[start_date][day]' => 5,
+   *   'classroom_course[start_date][day]' => 2009,
+   *  );
+   *
+   * It's just a convenience method.
+   *
+   * @param $date
+   *   PHP date.
+   * @type $type
+   *   Classroom content type ('course' or 'assignment').
+   */
+
+  function dateToDatetimeForm($date, $type, $field) {
+    $data = getdate($date);
+    return array(
+      'classroom_' . $type . '[' . $field . '][day]' => $data['mday'],
+      'classroom_' . $type . '[' . $field . '][month]' => $data['mon'],
+      'classroom_' . $type . '[' . $field . '][year]' => $data['year'],
+    );
+  }
+
+  /**
+   * Log in a user in the internal browser.
+   * This functions relies on loginUser() and sets up global variable "user"
+   * properly.
+   *
+   * @param $account
+   *   Account to log in the internal browser.
+   */
+  function loginUser($account) {
+    global $user;
+
+    $user = $account;
+    return $this->drupalLogin($account);
+  }
+
+  /**
+   * Get permissions for a given role.
+   *
+   * @param $rid
+   *   Role ID.
+   * @return
+   *   Array containing the permissions for the role with ID $rid.
+   */
+  function getPermissions($rid) {
+    $result = db_query("SELECT * FROM {permission} WHERE rid = '%s'", $rid);
+    $perm = db_fetch_object($result);
+    if ($perm) {
+      return explode(', ', $perm->perm);
+    } else {
+      return array();
+    }
+  }
+
+  /**
+   * Clear permissions for a given role.
+   *
+   * @param $rid
+   *   Role ID.
+   */
+  function clearPermissions($rid) {
+    $result = db_query("DELETE FROM {permission} WHERE rid = '%s'", $rid);
+  }
+
+
+  /**
+   * Pass if no error messages were shown after a request.
+   * 
+   * @return
+   *   TRUE on pass, FALSE on fail.
+   */
+  protected function assertNoErrorMessages() {
+    return $this->assertNoRaw("<div class=\"messages error\">");
+  }
+
+  /**
+   * Check access control to an URL.
+   *
+   * @param $url
+   *   URL to check access to.
+   * @param $can_access
+   *   Determines if the access must be granted or revoked.
+   * @return
+   *   Returns true if access is granted and $can_access is true.
+   *   Otherwise, it returns false.
+   */
+  function checkAccessTo($url, $can_access) {
+    $this->drupalGet($url);
+    $code = $can_access ? '200' : '403';
+    return $this->assertResponse($code, "Access control to url $url");
+  }
+
+  /**
+   * Creates a new role. This is just a convenient method so you don't have
+   * to specify the permissions everytime you call the method drupalCreateRole.
+   *
+   * @param $permissions
+   *   Permissions to be assigned to the role.
+   * @param $name
+   *   Optional name for the role.
+   * @return
+   *   Same as drupalCreateRole: Role ID of newly created role, or FALSE if
+   *   role creation failed.
+   */
+  function createRole($permissions = array('access content'), $name = NULL) {
+    return $this->drupalCreateRole($permissions, $name);
+  }
+
+}

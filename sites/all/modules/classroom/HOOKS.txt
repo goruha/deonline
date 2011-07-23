@@ -1,0 +1,22 @@
+$Id
+
+* classroom_insert_course($course)
+  It's invoked when a new course is created.
+
+* classroom_load_course($course)
+  It's invoked when a course is loaded.
+
+* classroom_course_links($course)
+  Links that will be shown in courses lists ('Go classroom', 'Sign up', etc.).
+
+* classroom_course_summary($course)
+  Some HTML to be included in the course's summary page.
+  
+* classroom_user_links($user, $back)
+  Links that will be shown in courses' user lists.
+
+* classroom_perms()
+  Permission that must be assigned to teachers and students' roles.
+
+* classroom_response_link($node)
+  URL to response to an assignment

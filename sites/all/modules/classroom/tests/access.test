@@ -1,0 +1,239 @@
+<?php
+// $Id: access.test,v 1.10 2009/12/24 08:56:07 osoh Exp $
+
+include_once(dirname(__FILE__) .'/classroom.test');
+
+class ClassroomAccessTestCase extends ClassroomTestCase {
+  var $admin, $course, $teacher, $student;
+
+  public static function getInfo() {
+    return array(
+      'name' => t('Access tests'),
+      'desc' => t('Tests access to actions.'),
+      'group' => t('Classroom tests'),
+    );
+  }
+
+  function setUp() {
+    parent::setUp();
+    $this->setupContentType('course');
+    $this->setupContentType('assignment');
+    $this->admin = $this->createAdmin();
+    $this->teacher = $this->createTeacher();
+    $this->student = $this->createStudent();
+    $this->course = $this->createClassroomNode('course', 'Course #1');
+    $this->othercourse = $this->createClassroomNode('course', 'Course #2');
+  }
+
+  /*
+   * Testing access functions (classroom.access.inc file).
+   */
+  function testUserIsTeacher() {
+    $this->loginUser($this->teacher);
+    $this->assertFalse(classroom_check_access($this->course->nid, CLASSROOM_TEACHER));
+    classroom_register_teacher($this->teacher, $this->course);
+    $this->assertTrue(classroom_check_access($this->course->nid));
+    $this->assertTrue(classroom_check_access($this->course->nid, CLASSROOM_TEACHER));
+  }
+
+  function testUserIsStudent() {
+    $this->loginUser($this->student);
+    $this->assertFalse(classroom_check_access($this->course->nid, CLASSROOM_TEACHER));
+    $this->assertFalse(classroom_check_access($this->course->nid));
+    classroom_register_student($this->student, $this->course);
+    $this->assertTrue(classroom_check_access($this->course->nid));
+    $this->assertTrue(classroom_check_access($this->course->nid, CLASSROOM_STUDENT));
+    $this->assertFalse(classroom_check_access($this->course->nid, CLASSROOM_TEACHER));
+  }
+
+  function testUserIsAdmin() {
+    $this->loginUser($this->admin);
+    $this->assertTrue(classroom_check_access($this->course->nid, CLASSROOM_TEACHER));
+    $this->assertTrue(classroom_check_access($this->course->nid, CLASSROOM_TEACHER));
+  }
+
+  /*
+   * Testing scenarios.
+   */
+  function testStudentBasicAccess() {
+    $this->loginUser($this->student);
+    $this->checkAccessTo("classroom/course/{$this->course->nid}", false);
+    classroom_register_student($this->student, $this->course);
+    $this->checkAccessTo("classroom/course/{$this->course->nid}", true);
+    $this->checkAccessTo("classroom/course/{$this->course->nid}/resources/remove", false);
+    $this->checkAccessTo("classroom/course/{$this->course->nid}/grades", false);
+    $this->drupalLogout();
+  }
+
+  function testAdminBasicAccess() {
+    $this->loginUser($this->admin);
+    $this->checkAccessTo("classroom/course/{$this->course->nid}", true);
+    $this->drupalLogout();
+  }
+
+  function testTeacherBasicAccess() {
+    $this->loginUser($this->teacher);
+    $this->checkAccessTo("classroom/course/{$this->course->nid}", false);
+    classroom_register_teacher($this->teacher, $this->course);
+    $this->checkAccessTo("classroom/course/{$this->course->nid}", true);
+    $this->checkAccessTo("classroom/course/{$this->course->nid}/assignments", true);
+    $this->checkAccessTo("classroom/course/{$this->course->nid}/teachers", true);
+    $this->checkAccessTo("classroom/course/{$this->course->nid}/teachers/add", false);
+    $this->checkAccessTo("classroom/course/{$this->course->nid}/teachers/remove", false);
+    $this->checkAccessTo("classroom/course/{$this->course->nid}/students", true);
+    $this->checkAccessTo("classroom/course/{$this->course->nid}/students/add", false);
+    $this->checkAccessTo("classroom/course/{$this->course->nid}/students/remove", false);
+    $this->checkAccessTo("classroom/course/{$this->course->nid}/resources", true);
+    $this->checkAccessTo("classroom/course/{$this->course->nid}/resources/add", true);
+    $this->checkAccessTo("classroom/course/{$this->course->nid}/resources/remove", true);
+    $this->checkAccessTo("classroom/course/{$this->course->nid}/grades", true);
+    $this->drupalLogout();
+  }
+
+  function testManagerBasicAccess() {
+    $this->loginUser($this->teacher);
+    $this->checkAccessTo("classroom/course/{$this->course->nid}", false);
+    classroom_register_manager($this->teacher, $this->course);
+    $this->checkAccessTo("classroom/course/{$this->course->nid}", true);
+    $this->checkAccessTo("classroom/course/{$this->course->nid}/assignments", true);
+    $this->checkAccessTo("classroom/course/{$this->course->nid}/teachers", true);
+    $this->checkAccessTo("classroom/course/{$this->course->nid}/teachers/add", true);
+    $this->checkAccessTo("classroom/course/{$this->course->nid}/teachers/remove", true);
+    $this->checkAccessTo("classroom/course/{$this->course->nid}/students", true);
+    $this->checkAccessTo("classroom/course/{$this->course->nid}/students/add", true);
+    $this->checkAccessTo("classroom/course/{$this->course->nid}/students/remove", true);
+    $this->checkAccessTo("classroom/course/{$this->course->nid}/resources", true);
+    $this->checkAccessTo("classroom/course/{$this->course->nid}/resources/add", false);
+    $this->checkAccessTo("classroom/course/{$this->course->nid}/resources/remove", false);
+    $this->checkAccessTo("classroom/course/{$this->course->nid}/grades", true);
+    $this->drupalLogout();
+  }
+
+  function testStudentOtherCourseAccess() {
+    $this->loginUser($this->student);
+    $this->drupalGet("classroom/course/{$this->course->nid}");
+    $this->assertResponse('403');
+    classroom_register_student($this->student, $this->othercourse);
+    $this->drupalGet("classroom/course/{$this->course->nid}");
+    $this->assertResponse('403');
+    $this->drupalLogout();
+  }  
+
+  function testAdminClassroomAccess() {
+    $this->loginUser($this->admin);
+    $this->drupalGet("classroom");
+    $this->assertResponse('200');
+    $this->drupalLogout();
+  }
+
+  function testStudentClassroomAccess() {
+    $this->loginUser($this->student);
+    $this->drupalGet("classroom");
+    $this->assertResponse('200');
+    $this->drupalLogout();
+  }
+
+  function testTeacherClassroomAccess() {
+    $this->loginUser($this->teacher);
+    $this->drupalGet("classroom");
+    $this->assertResponse('200');
+    $this->drupalLogout();
+  }
+
+  function testTeacherAdminAccess() {
+    $this->loginUser($this->teacher);
+    $this->drupalGet("admin/settings/classroom");
+    $this->assertResponse('403');
+    $this->drupalGet("admin/settings/classroom/resources");
+    $this->assertResponse('403');
+    $this->drupalGet("admin/settings/classroom/assignments");
+    $this->assertResponse('403');
+    $this->drupalGet("admin/settings/classroom/responses");
+    $this->assertResponse('403');
+    $this->drupalLogout();
+  }
+
+  function testStudentAdminAccess() {
+    $this->loginUser($this->student);
+    $this->drupalGet("admin/settings/classroom");
+    $this->assertResponse('403');
+    $this->drupalGet("admin/settings/classroom/resources");
+    $this->assertResponse('403');
+    $this->drupalGet("admin/settings/classroom/assignments");
+    $this->assertResponse('403');
+    $this->drupalGet("admin/settings/classroom/responses");
+    $this->assertResponse('403');
+    $this->drupalLogout();
+  
+  }
+
+  function testAdminAdminAccess() {
+    $this->loginUser($this->admin);
+    $this->drupalGet("admin/settings/classroom");
+    $this->assertResponse('200');
+    $this->drupalGet("admin/settings/classroom/resources");
+    $this->assertResponse('200');
+    $this->drupalGet("admin/settings/classroom/assignments");
+    $this->assertResponse('200');
+    $this->drupalGet("admin/settings/classroom/responses");
+    $this->assertResponse('200');
+    $this->drupalLogout();
+  }
+
+  /**
+   * Self-test for getPermissions() method.
+   */
+  function testGetPermissions() {
+    $rid = (int) $this->drupalCreateRole(array('access content'));
+    $perms = $this->getPermissions($rid);
+    $this->assertEqual(count($perms), 1);
+  }
+
+  function testAddPermissions() {
+    $rid = (int) $this->createRole();
+    $orig_perms = $this->getPermissions($rid);
+    $new_perm = 'administer content';
+    $this->assertTrue(classroom_add_perms($rid, array($new_perm)));
+    $perms = $this->getPermissions($rid);
+    $diff = array_diff($perms, $orig_perms);
+    $this->assertEqual(count($perms), count($orig_perms) + 1);
+    $this->assertTrue(in_array($new_perm, $perms));
+  }
+
+  function testAddAYetAssignedPermission() {
+    $rid = (int) $this->createRole();
+    $perms = array('administer content');
+    // Adds 'administer content' permission
+    $added_perms = classroom_add_perms($rid, $perms);
+    $this->assertFalse(empty($added_perms));
+
+    // Try to add 'administer content' permission again, so no permission is
+    // added.
+    $added_perms = classroom_add_perms($rid, $perms);
+    $this->assertTrue(empty($added_perms));
+
+    // Try to add 'administer content' and 'access classroom' permission,
+    // so only the later is added to the list.
+    array_push($perms, 'access classroom');
+    $added_perms = classroom_add_perms($rid, $perms);
+    $this->assertEqual(array_values($added_perms), array('access classroom'));
+  }
+
+  function testRemovePermissions() {
+    $rid = (int) $this->createRole();
+    $orig_perms = $this->getPermissions($rid);
+    $rm_perm = 'access content';
+
+    // Remove 'access content' permission
+    $this->assertTrue(in_array($rm_perm, $orig_perms));
+    $rm_perms = classroom_remove_perms($rid, array($rm_perm));
+    $perms = $this->getPermissions($rid);
+    $this->assertFalse(in_array($rm_perm, $perms));
+
+    // Try to remove the 'access content' permission again
+    $this->assertEqual(count($rm_perms), 1);
+    $rm_perms = classroom_remove_perms($rid, array($rm_perm));
+    $this->assertTrue(empty($rm_perms));
+  }
+
+}

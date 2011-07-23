@@ -1,0 +1,382 @@
+<?php
+// $Id: classroom.install,v 1.11 2010/03/18 21:09:53 osoh Exp $
+
+/**
+ * Implementation of hook_schema()
+ */
+function classroom_schema() {
+  $schema['classroom_course'] = array(
+    'description' => '',
+    'fields' => array(
+      'nid' => array(
+        'description' => 'The {node}.nid this record affects.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0),
+      'start_t' => array(
+        'description' => 'The Unix timestamp when the course starts.',
+        'type' => 'int',
+        'not null' => FALSE,
+        'default' => NULL),
+      'end_t' => array(
+        'description' => 'The Unix timestamp when the course ends.',
+        'type' => 'int',
+        'not null' => FALSE,
+        'default' => NULL),
+      'registration_start' => array(
+        'description' => 'The Unix timestamp when the registration period starts.',
+        'type' => 'int',
+        'not null' => FALSE,
+        'default' => NULL),
+      'registration_end' => array(
+        'description' => 'The Unix timestamp when the registration period ends.',
+        'type' => 'int',
+        'not null' => FALSE,
+        'default' => NULL),
+      'use_grade_percentages' => array(
+        'description' => 'The Unix timestamp when the course ends.',
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 0),
+      'access_by_rid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => FALSE,
+        'default' => NULL,
+        'description' => 'The {role}.rid to which the permissions are assigned.'),
+    ),
+    'primary key' => array('nid'),
+  );
+
+  $schema['classroom_course_resource'] = array(
+    'description' => '',
+    'fields' => array(
+      'course_nid' => array(
+        'description' => '',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0),
+      'resource_nid' => array(
+        'description' => '',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0),
+      'topic_tid' => array(
+        'description' => '',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => FALSE,
+        'default' => NULL),
+    ),
+    // FIXME: topic_tid must be included? Or maybe no primary key must exists at all.
+    'primary key' => array('course_nid', 'resource_nid'),
+  );
+
+  $schema['classroom_assignment'] = array(
+    'description' => '',
+    'fields' => array(
+      'nid' => array(
+        'description' => '',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0),
+      'course_nid' => array(
+        'description' => '',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0),
+      'end_t' => array(
+        'description' => 'The Unix timestamp when the course ends.',
+        'type' => 'int',
+        'not null' => FALSE,
+        'default' => NULL),
+      'relative_end' => array(
+        'description' => 'The unix timestamp to be added to the registration date.',
+        'type' => 'int',
+        'not null' => FALSE,
+        'default' => NULL),
+      'max_grade' => array(
+        'description' => '',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0),
+      'grade_percentage' => array(
+        'description' => '',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => FALSE,
+        'default' => NULL),
+      'topic_tid' => array(
+        'description' => '',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => FALSE,
+        'default' => NULL),
+    ),
+    'primary key' => array('nid'),
+  );
+
+  $schema['classroom_response'] = array(
+    'description' => '',
+    'fields' => array(
+      'nid' => array(
+        'description' => '',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0),
+      'assignment_nid' => array(
+        'description' => '',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0),
+      'grade' => array(
+        'description' => '',
+        'type' => 'float',
+        'not null' => FALSE,
+        'default' => NULL),
+    ),
+  );
+
+  $schema['classroom_registration'] = array(
+    'description' => '',
+    'fields' => array(
+      'course_nid' => array(
+        'description' => '',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0),
+      'uid' => array(
+        'description' => '',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0),
+      'active' => array(
+        'description' => '',
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 0),
+      'role' => array(
+        'description' => 'Classroom role (0 = student; 1 = teacher; 2 = manager)',
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 0),
+      'date' => array(
+        'description' => 'The Unix timestamp when the user was registered.',
+        'type' => 'int',
+        'not null' => FALSE,
+        'default' => NULL),
+      'access_by_rid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => FALSE,
+        'default' => NULL,
+        'description' => 'The {role}.rid to which the permissions are assigned.'),
+    ),
+  );
+
+  $schema['classroom_topic'] = array(
+    'description' => '',
+    'fields' => array(
+      'tid' => array(
+        'description' => 'The topic identifier.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE),
+      'course_nid' => array(
+        'description' => '',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0),
+      'name' => array(
+        'description' => '',
+        'type' => 'text',
+        'not null' => TRUE),
+      'description' => array(
+        'description' => '',
+        'type' => 'text',
+        'not null' => FALSE,
+        'default' => NULL),
+      'number' => array(
+        'description' => '',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0),
+    ),
+    'primary key' => array('tid'),
+  );
+
+  return $schema;
+}
+
+/**
+ * Implementation of hook_install()
+ */
+function classroom_install() {
+  drupal_install_schema('classroom');
+}
+
+/**
+ * Implementation of hook_uninstall()
+ */
+function classroom_uninstall() {
+  drupal_uninstall_schema('classroom');
+  $confvars = array(
+    'classroom_assigned_perms',
+    'classroom_assignment_types',
+    'classroom_course_types',
+    'classroom_pager_limit',
+    'classroom_resource_types',
+    'classroom_response_types',
+    'classroom_students_role',
+    'classroom_teachers_role',
+  );
+  foreach ($confvars as $var) {
+    variable_del($var);
+  }
+}
+
+/**
+ * Implementation of hook_update_N()
+ */
+function classroom_update_6100() {
+  $ret = array();
+  /* classroom_topics table */
+  $topics_table = array(
+    'description' => '',
+    'fields' => array(
+      'tid' => array(
+        'description' => 'The topic identifier.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE),
+      'course_nid' => array(
+        'description' => '',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0),
+      'name' => array(
+        'description' => '',
+        'type' => 'text',
+        'not null' => TRUE),
+      'description' => array(
+        'description' => '',
+        'type' => 'text',
+        'not null' => FALSE,
+        'default' => NULL),
+      'number' => array(
+        'description' => '',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0),
+    ),
+    'primary key' => array('tid'),
+  );
+  db_create_table($ret, 'classroom_topic', $topics_table);
+  /* topic_tid field */
+  $field_spec = array(
+    'description' => 'Topic ID',
+    'type' => 'int',
+    'unsigned' => TRUE,
+    'not null' => FALSE,
+    'default' => NULL,
+  );
+  db_add_field($ret, 'classroom_assignment', 'topic_tid', $field_spec);
+  db_add_field($ret, 'classroom_course_resource', 'topic_tid', $field_spec);
+  return $ret;
+}
+
+/**
+ * Implementation of hook_update_N()
+ */
+function classroom_update_6101() {
+  // Load some files which contains needed functions.
+  module_load_include('inc', 'classroom', 'classroom.common');
+  module_load_include('inc', 'classroom', 'classroom.courses');
+  module_load_include('inc', 'classroom', 'classroom.users');
+
+  $ret = array();
+
+  $field_spec = array(
+    'description' => 'Classroom role (0 = student; 1 = teacher; 2 = manager)',
+    'type' => 'int',
+    'size' => 'tiny',
+    'not null' => TRUE,
+    'default' => 0,
+  );
+  db_add_field($ret, 'classroom_registration', 'role', $field_spec);
+  db_query("UPDATE {classroom_registration} SET role = is_teacher");
+  db_drop_field($ret, 'classroom_registration', 'is_teacher');
+
+  // For each course, set course owner as manager.
+  $result = db_query("SELECT nid FROM {classroom_course}");
+  while ($row = db_fetch_array($result)) {
+    $course = node_load($row['nid']);
+    classroom_register_manager($course->uid, $course);
+  }
+
+  return $ret;
+}
+
+/**
+ * Implementation of hook_update_N()
+ */
+function classroom_update_6102() {
+  $ret = array();
+
+  $field_spec = array(
+    'type' => 'int',
+    'unsigned' => TRUE,
+    'not null' => FALSE,
+    'default' => NULL,
+    'description' => 'The {role}.rid to which the permissions are assigned.',
+  );
+
+  db_add_field($ret, 'classroom_course', 'access_by_rid', $field_spec);
+  db_add_field($ret, 'classroom_registration', 'access_by_rid', $field_spec);
+  return $ret;
+}
+
+/**
+ * Implementation of hook_update_N()
+ */
+function classroom_update_6103() {
+  $ret = array();
+
+  $field_spec = array(
+    'type' => 'int',
+    'not null' => FALSE,
+    'default' => NULL
+  );
+
+  db_change_field($ret, 'classroom_course', 'end', 'end_t', $field_spec);
+  db_change_field($ret, 'classroom_course', 'start', 'start_t', $field_spec);
+  db_change_field($ret, 'classroom_assignment', 'end', 'end_t', $field_spec);
+
+  $field_spec = array(
+    'description' => '',
+    'type' => 'float',
+    'not null' => FALSE,
+    'default' => NULL
+  );
+
+  db_change_field($ret, 'classroom_response', 'grade', 'grade', $field_spec);
+
+  return $ret;
+}

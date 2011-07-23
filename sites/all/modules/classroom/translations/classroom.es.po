@@ -1,0 +1,581 @@
+# $Id: classroom.es.po,v 1.4 2010/01/12 14:40:30 osoh Exp $
+#
+# Spanish translation of Drupal (classroom)
+# Copyright 2010 Banot.net <info@banot.net>
+# Generated from files:
+#  classroom.admin.inc: n/a
+#  classroom.pages.inc: n/a
+#  classroom.assignments.inc: n/a
+#  classroom.views.inc: n/a
+#  classroom.common.inc: n/a
+#  classroom.courses.inc: n/a
+#  classroom.resources.inc: n/a
+#  classroom.module: n/a
+#  classroom.responses.inc: n/a
+#  classroom.info: n/a
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"POT-Creation-Date: 2010-01-12 14:08+0000\n"
+"PO-Revision-Date: 2009-07-15 14:16+0100\n"
+"Last-Translator: Imobach González Sosa <imobachgs@banot.net>\n"
+"Language-Team: Spanish <info@banot.net>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: classroom.admin.inc:12;48;84;115 classroom.pages.inc:1337;1381
+msgid "Type"
+msgstr "Tipo"
+
+#: classroom.admin.inc:13
+msgid "Content types that could be used as courses."
+msgstr "Tipos de contenido que pueden usarse como cursos."
+
+#: classroom.admin.inc:34;70;103;137
+msgid "Cannot overlap the types for the elements of Classroom module"
+msgstr ""
+"Los tipos de contenido para los diferentes elementos del módulo Classroom no "
+"pueden solaparse"
+
+#: classroom.admin.inc:49
+msgid "Content types that could be used as assignments."
+msgstr "Tipo de contenido que pueden usarse como tareas."
+
+#: classroom.admin.inc:85
+msgid "Content types that could be used as responses."
+msgstr "Tipos de contenido que pueden usarse como respuestas."
+
+#: classroom.admin.inc:116
+msgid "Content types that could be used as resources."
+msgstr "Tipos de contenido que pueden usarse como recursos."
+
+#: classroom.admin.inc:154
+msgid "Teacher's role"
+msgstr "Rol del profesor"
+
+#: classroom.admin.inc:155
+msgid "Role which users could be teachers."
+msgstr "Rol cuyos usuarios pueden ser profesores."
+
+#: classroom.admin.inc:162
+msgid "Student's role"
+msgstr "Rol del alumno"
+
+#: classroom.admin.inc:163
+msgid "Role which users could be students."
+msgstr "Role cuyos usuarios pueden ser estudiantes."
+
+#: classroom.admin.inc:170
+msgid "Adjust permissions"
+msgstr "Ajustar permisos"
+
+#: classroom.admin.inc:205
+msgid "Permissions granted to role '%role_name': "
+msgstr "Permisos añadidos al rol '%role_name': "
+
+#: classroom.admin.inc:212
+msgid "Permissions revoked to role '%role_name': "
+msgstr "Permisos revocados al rol '%role_name': "
+
+#: classroom.assignments.inc:42
+msgid "Assignment"
+msgstr "Tarea"
+
+#: classroom.assignments.inc:49;69;184;204
+msgid "Ending date"
+msgstr "Fecha de fin"
+
+#: classroom.assignments.inc:58
+msgid "Ending date type"
+msgstr "Tipo de fecha de finalización"
+
+#: classroom.assignments.inc:61
+msgid "Fixed date"
+msgstr "Fecha fija"
+
+#: classroom.assignments.inc:61
+msgid "Relative date"
+msgstr "Fecha relativa"
+
+#: classroom.assignments.inc:61
+msgid "Without date"
+msgstr "Sin fecha"
+
+#: classroom.assignments.inc:76
+msgid "Days from registration"
+msgstr "Días desde el registro"
+
+#: classroom.assignments.inc:110 classroom.pages.inc:487
+msgid "Topic"
+msgstr "Tema"
+
+#: classroom.assignments.inc:111 classroom.pages.inc:488
+msgid "Related topic."
+msgstr "Tema relacionado."
+
+#: classroom.assignments.inc:194
+msgid "Ending date (days from registration)"
+msgstr "Fecha de fin (días desde el registro)"
+
+#: classroom.assignments.inc:205
+msgid "Unlimited"
+msgstr "Ilimitado"
+
+#: classroom.assignments.inc:406
+msgid "You must be a teacher of this course"
+msgstr "Debe ser un profesor del curso"
+
+#: classroom.assignments.inc:414
+msgid "The course for this assignment must exists"
+msgstr "Debe existir el curso para esta tarea"
+
+#: classroom.assignments.inc:430
+msgid "The sum of the percentages of all assignments must not exceed 100%"
+msgstr ""
+"La suma de los porcentajes de todas las tareas no puede exceder el 100%"
+
+#: classroom.assignments.inc:460
+msgid "The assignment could not end before the course begins"
+msgstr "La tarea no puede finalizar antes del comienzo del curso"
+
+#: classroom.blocks.inc:39 classroom.pages.inc:789;1243
+msgid "There are no assignments for this course yet."
+msgstr "Aún no hay tareas para este curso."
+
+#: classroom.common.inc:106
+msgid "---"
+msgstr "---"
+
+#: classroom.common.inc:273 classroom.courses.inc:119 classroom.pages.inc:871
+#: classroom.module:79;215
+msgid "Resources"
+msgstr "Recursos"
+
+#: classroom.courses.inc:114;149;416
+msgid "Course"
+msgstr "Curso"
+
+#: classroom.courses.inc:126
+msgid "Delete associated information"
+msgstr "Borrar la información asociada"
+
+#: classroom.courses.inc:129
+msgid ""
+"The following information is associated to the course and will be erased if "
+"you check them."
+msgstr ""
+"La siguiente información está asociada al curso. Se eliminará la que usted "
+"seleccione."
+
+#: classroom.courses.inc:155
+msgid "Unlimited end date"
+msgstr "Sin fecha de fin"
+
+#: classroom.courses.inc:162;423
+msgid "Starting date"
+msgstr "Fecha de inicio"
+
+#: classroom.courses.inc:176
+msgid "Unlimited end inscription"
+msgstr "Sin fecha final de inscripción"
+
+#: classroom.courses.inc:183
+msgid "Signup start date"
+msgstr "Comienzo de inscripción"
+
+#: classroom.courses.inc:190
+msgid "Signup end date"
+msgstr "Finalización de inscripción"
+
+#: classroom.courses.inc:197;463;465
+msgid "Use grade percentages"
+msgstr "Usar peso en las notas"
+
+#: classroom.courses.inc:204
+msgid "Access by role"
+msgstr "Acceder por rol"
+
+#: classroom.courses.inc:206 classroom.topics.inc:107
+msgid "None"
+msgstr "Ninguno"
+
+#: classroom.courses.inc:365
+msgid "An event may not end before it starts."
+msgstr "Un evento no puede acabar antes de empezar."
+
+#: classroom.courses.inc:373
+msgid "The registration period starting date must be prior to the ending date."
+msgstr ""
+"La fecha de inicio del periodo de registro debe ser anterior a la de "
+"finalización."
+
+#: classroom.courses.inc:378
+msgid "The registration period may not start after the course ends."
+msgstr "El periodo de registro no puede empezar después del final del curso."
+
+#: classroom.courses.inc:443
+msgid "Registration starting date"
+msgstr "Comienzo del registro"
+
+#: classroom.courses.inc:453
+msgid "Registration ending date"
+msgstr "Final del registro"
+
+#: classroom.pages.inc:15
+msgid "Start"
+msgstr "Comienzo"
+
+#: classroom.pages.inc:16
+msgid "End"
+msgstr "Final"
+
+#: classroom.pages.inc:44
+msgid "Go classroom"
+msgstr "Ir al aula"
+
+#: classroom.pages.inc:61
+msgid "There are no planned or running courses."
+msgstr "No hay cursos planificados o en marcha."
+
+#: classroom.pages.inc:77
+msgid "Administer topics"
+msgstr "Administrar temas"
+
+#: classroom.pages.inc:91
+msgid "Lastest resources"
+msgstr "Últimos recursos"
+
+#: classroom.pages.inc:93
+msgid "Lastest assignments"
+msgstr "Últimas tareas"
+
+#: classroom.pages.inc:128
+msgid "Final grade: "
+msgstr "Nota final: "
+
+#: classroom.pages.inc:143;454
+msgid "Global"
+msgstr "Global"
+
+#: classroom.pages.inc:148
+msgid "Add assignment:"
+msgstr "Añadir tarea"
+
+#: classroom.pages.inc:188;280;493;1048
+msgid "Add selected"
+msgstr "Añadir seleccionados"
+
+#: classroom.pages.inc:543;1071
+msgid "Remove selected"
+msgstr "Borrar seleccionados"
+
+#: classroom.pages.inc:582;1303
+msgid "Number"
+msgstr "Número"
+
+#: classroom.pages.inc:584;1315 classroom.module:144
+msgid "Description"
+msgstr "Descripción"
+
+#: classroom.pages.inc:597
+msgid "Add topic"
+msgstr "Añadir tema"
+
+#: classroom.pages.inc:616
+msgid "Save"
+msgstr "Guardar"
+
+#: classroom.pages.inc:640;680 classroom.responses.inc:271;277
+msgid "Delete"
+msgstr "Borrar"
+
+#: classroom.pages.inc:654
+msgid "The topic number can't be duplicated!"
+msgstr "¡El número del tema no puede estar duplicado!"
+
+#: classroom.pages.inc:676;772
+msgid "Update"
+msgstr "Actualizar"
+
+#: classroom.pages.inc:760
+msgid "View response"
+msgstr "Ver respuesta"
+
+#: classroom.pages.inc:803
+msgid "Final Grade"
+msgstr "Nota final"
+
+#: classroom.pages.inc:813;1404
+msgid "N/G"
+msgstr "N/C"
+
+#: classroom.pages.inc:815
+msgid "view"
+msgstr "ver"
+
+#: classroom.pages.inc:817
+msgid "N/A"
+msgstr "N/A"
+
+#: classroom.pages.inc:1273
+msgid "There are no resources for this course yet."
+msgstr "Aún no hay recursos para este curso."
+
+#: classroom.pages.inc:1287
+msgid "You must select at least one item for this group of options."
+msgstr "Debe seleccionar al menos una opción de este grupo."
+
+#: classroom.pages.inc:1351
+msgid "There are no resources for this topic yet."
+msgstr "Aún no hay recursos para este tema."
+
+#: classroom.pages.inc:1380
+msgid "Due date"
+msgstr "Fecha límite"
+
+#: classroom.pages.inc:1382
+msgid "Created at"
+msgstr "Creado"
+
+#: classroom.pages.inc:1419
+msgid "There are no assignments for this topic yet."
+msgstr "Aún no hay tareas para este tema."
+
+#: classroom.responses.inc:246
+msgid "The assignment for this response must exists"
+msgstr "Debe existir la tarea para esta respuesta"
+
+#: classroom.responses.inc:252
+msgid "The response cannot be graded overdue the maximum grade"
+msgstr "La respuesta no puede calificarse por encima de la máxima nota"
+
+#: classroom.responses.inc:257
+msgid "The response could not be modified after due date of the assignment"
+msgstr "La respuesta no puede modificarse después de la fecha límite"
+
+#: classroom.responses.inc:262
+msgid ""
+"The response could not be modified outside the time limits of the course"
+msgstr ""
+
+#: classroom.responses.inc:267
+msgid "Cannot modify a response that have been graded"
+msgstr "No puede modificarse una respuesta que ha sido evaluada"
+
+#: classroom.responses.inc:273
+msgid "Only the author could delete a response"
+msgstr "Sólo el autor pupede borrar una respuesta"
+
+#: classroom.responses.inc:288
+msgid "An assignment could not have two responses"
+msgstr "Una tarea no puede tener dos respuestas"
+
+#: classroom.responses.inc:368
+msgid "Answer"
+msgstr "Respuesta"
+
+#: classroom.module:502
+msgid "Classroom: my courses"
+msgstr "Classroom: mis cursos"
+
+#: classroom.module:505
+msgid "Classroom: my assignments"
+msgstr "Classroom: mis tareas"
+
+#: classroom.module:508
+msgid "Classroom: course topics"
+msgstr "Classroom: temas del curso"
+
+#: classroom.module:516
+msgid "My courses"
+msgstr "Mis cursos"
+
+#: classroom.module:522
+msgid "My assignments"
+msgstr "Mis tareas"
+
+#: classroom.module:528;167
+msgid "Topics"
+msgstr "Temas"
+
+#: classroom.module:39
+msgid "administer classroom"
+msgstr "administrar classroom"
+
+#: classroom.module:39
+msgid "access classroom"
+msgstr "acceder a classroom"
+
+#: classroom.module:61
+msgid "Classroom settings"
+msgstr "Configuración de Classroom"
+
+#: classroom.module:71
+msgid "Courses settings"
+msgstr "Configuración de cursos"
+
+#: classroom.module:80
+msgid "Resources settings"
+msgstr "Configuración de recursos"
+
+#: classroom.module:91
+msgid "Assignments settings"
+msgstr "Configuración de tareas"
+
+#: classroom.module:102
+msgid "Responses settings"
+msgstr "Configuración de respuestas"
+
+#: classroom.module:112
+msgid "Roles and permissions"
+msgstr "Roles y permisos"
+
+#: classroom.module:113
+msgid "Roles and permissions settings"
+msgstr "Configuración de roles y permisos"
+
+#: classroom.module:124
+msgid "List of courses"
+msgstr "Lista de cursos"
+
+#: classroom.module:134;145
+msgid "Course page"
+msgstr "Página del curso"
+
+#: classroom.module:155
+msgid "News"
+msgstr "Novedades"
+
+#: classroom.module:156
+msgid "News page"
+msgstr "Página de novedades"
+
+#: classroom.module:168
+msgid "Topics list"
+msgstr "Lista de temas"
+
+#: classroom.module:179
+msgid "Add topics"
+msgstr "Añadir temas"
+
+#: classroom.module:180
+msgid "Add topics to a course"
+msgstr "Añadir temas a un curso"
+
+#: classroom.module:191
+msgid "Edit topic"
+msgstr "Editar tema"
+
+#: classroom.module:192
+msgid "Edit a topic"
+msgstr "Editar un tema"
+
+#: classroom.module:204
+msgid "Assignments list"
+msgstr "Lista de tareas"
+
+#: classroom.module:216
+msgid "Resources list"
+msgstr "Lista de recursos"
+
+#: classroom.module:227
+msgid "Add resources"
+msgstr "Añadir recursos"
+
+#: classroom.module:228
+msgid "Add resources to a course"
+msgstr "Añadir recursos a un curso"
+
+#: classroom.module:239
+msgid "Remove resources"
+msgstr "Quitar recursos"
+
+#: classroom.module:240
+msgid "Remove resources from a course"
+msgstr "Quitar recursos de un curso"
+
+#: classroom.module:251
+msgid "Grades"
+msgstr "Notas"
+
+#: classroom.module:252
+msgid "Grades list"
+msgstr "Lista de notas"
+
+#: classroom.module:264
+msgid "Students list"
+msgstr "Lista de alumnos"
+
+#: classroom.module:275
+msgid "Add students"
+msgstr "Añadir alumnos "
+
+#: classroom.module:276
+msgid "Add students to a course"
+msgstr "Añadir alumnos a un curso"
+
+#: classroom.module:287
+msgid "Remove students"
+msgstr "Quitar alumnos"
+
+#: classroom.module:288
+msgid "Remove students from a course"
+msgstr "Quitar alumnos de un curso"
+
+#: classroom.module:299
+msgid "Teachers"
+msgstr "Profesores"
+
+#: classroom.module:300
+msgid "Teachers list"
+msgstr "Lista de profesores"
+
+#: classroom.module:311
+msgid "Add teachers"
+msgstr "Añadir profesores"
+
+#: classroom.module:312
+msgid "Add teachers to a course"
+msgstr "Añadir profesores a un curso"
+
+#: classroom.module:323
+msgid "Remove teachers"
+msgstr "Quitar profesores"
+
+#: classroom.module:324
+msgid "Remove teachers from a course"
+msgstr "Quitar profesores de un curso"
+
+#: classroom.module:335
+msgid "Managers"
+msgstr "Gestores"
+
+#: classroom.module:336
+msgid "Managers list"
+msgstr "Lista de gestores"
+
+#: classroom.module:347
+msgid "Add managers"
+msgstr "Añadir gestores"
+
+#: classroom.module:348
+msgid "Add managers to a course"
+msgstr "Añadir gestores a un curso"
+
+#: classroom.module:359
+msgid "Remove managers"
+msgstr "Quitar gestores"
+
+#: classroom.module:360
+msgid "Remove managers from a course"
+msgstr "Quitar gestores de un curso"
+
+#: classroom.module:373
+msgid "Topic page"
+msgstr "Página del tema"
+
+#: classroom.info:0
+msgid "A simple e-learning module"
+msgstr "Un módulo simple de e-learning"

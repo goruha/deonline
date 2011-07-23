@@ -1,0 +1,83 @@
+# $Id: classroomquiz.es.po,v 1.4 2010/01/12 14:40:30 osoh Exp $
+#
+# Spanish translation of Drupal (classroomquiz)
+# Copyright 2010 Banot.net <info@banot.net>
+# Generated from files:
+#  classroomquiz/classroomquiz.pages.inc: n/a
+#  classroomquiz/classroomquiz.module: n/a
+#  classroomquiz/classroomquiz.info: n/a
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"POT-Creation-Date: 2010-01-12 14:08+0000\n"
+"PO-Revision-Date: YYYY-mm-DD HH:MM+ZZZZ\n"
+"Last-Translator: Imobach González Sosa <imobachgs@banot.net>\n"
+"Language-Team: Spanish <info@banot.net>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: classroomquiz/classroomquiz.pages.inc:47
+msgid ""
+"No questions were found. Please !assign questions before trying to take this "
+"quiz."
+msgstr ""
+
+#: classroomquiz/classroomquiz.pages.inc:99
+msgid "Responses details"
+msgstr "Detalles de las respuestas"
+
+#: classroomquiz/classroomquiz.pages.inc:108
+#: classroomquiz/classroomquiz.module:198
+msgid "Submit date"
+msgstr "Fecha de envío"
+
+#: classroomquiz/classroomquiz.pages.inc:114
+msgid "Goto quiz"
+msgstr "Ir al cuestionario"
+
+#: classroomquiz/classroomquiz.module:328
+msgid "View results"
+msgstr "Ver resultados"
+
+#: classroomquiz/classroomquiz.module:29
+msgid "View"
+msgstr "Ver"
+
+#: classroomquiz/classroomquiz.module:30
+msgid "Quiz page"
+msgstr "Página del cuestionario"
+
+#: classroomquiz/classroomquiz.module:49
+msgid "Manage questions"
+msgstr "Gestionar preguntas"
+
+#: classroomquiz/classroomquiz.module:50
+msgid "Edit current quiz questions"
+msgstr "Editar las preguntas del cuestionario actual"
+
+#: classroomquiz/classroomquiz.module:60
+msgid "Quiz admin"
+msgstr ""
+
+#: classroomquiz/classroomquiz.module:61
+msgid "Administrate quiz"
+msgstr "Administrar cuestionario"
+
+#: classroomquiz/classroomquiz.module:71
+msgid "Edit"
+msgstr "Editar"
+
+#: classroomquiz/classroomquiz.module:72
+msgid "Edit current quiz"
+msgstr "Editar cuestionario actual"
+
+#: classroomquiz/classroomquiz.info:0
+msgid "Classroom Quiz"
+msgstr ""
+
+#: classroomquiz/classroomquiz.info:0
+msgid "Classroom - quiz integration module"
+msgstr ""

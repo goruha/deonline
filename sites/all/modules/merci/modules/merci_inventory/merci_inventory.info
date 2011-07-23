@@ -1,0 +1,18 @@
+
+name = MERCI Inventory
+package = MERCI
+description = "Applies inventory fields to MERCI resources"
+core = 6.x
+dependencies[] = merci
+dependencies[] = content_copy
+dependencies[] = text
+dependencies[] = field_sync
+
+
+
+; Information added by drupal.org packaging script on 2011-03-12
+version = "6.x-2.0-beta11"
+core = "6.x"
+project = "merci"
+datestamp = "1299937269"
+

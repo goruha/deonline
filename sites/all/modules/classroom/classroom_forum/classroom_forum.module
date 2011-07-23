@@ -1,0 +1,176 @@
+<?php
+// $Id: classroom_forum.module,v 1.10 2010/07/03 00:16:37 osoh Exp $
+
+/**
+ * Implementation of hook_menu
+ */
+function classroom_forum_menu() {
+  $items = array();
+  $items['classroom/course/%/forum'] = array(
+    'title' => 'Forum',
+    'description' => 'Forum',
+    'page callback' => '_classroom_forum_forum_page',
+    'page arguments' => array(2),
+    'access callback' => 'classroom_check_access',
+    'access arguments' => array(2),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 1,
+  );
+  return $items;
+}
+
+/**
+ * Function to render the forum page 
+ */
+function _classroom_forum_forum_page($course_nid) {
+  module_load_include('inc', 'forum', 'forum.pages'); 
+  $course_node = node_load($course_nid);
+ 
+  $tid = $course_node->classroom_course['forum_tid'];
+  
+  $forumpage = forum_page($tid);
+
+  $breadcrumb = array(
+    l(t("Home"), "<front>"),
+    l(t("Courses"), "classroom/"),
+    l($course_node->title, "classroom/course/".$course_node->nid),
+  );
+
+  drupal_set_breadcrumb($breadcrumb);
+ 
+  return $forumpage;
+}
+
+/**
+ * Implementation of hook_classroom_insert_course().
+ */
+function classroom_forum_classroom_insert_course($course) {
+  $vid = variable_get('forum_nav_vocabulary', '');
+  $data = array(
+    'description' => "$course->title forum",
+    'weight' => 0,
+    'name' => $course->title,
+    'vid' => $vid);
+  taxonomy_save_term($data);
+  $tid = db_last_insert_id('term_data', 'tid');
+  db_query("UPDATE {classroom_course} SET forum_tid = %d WHERE nid = %d",
+    $tid, $course->nid);
+  $course->classroom_course['forum_tid'] = $tid;
+}
+
+/**
+ * Implementation of hook_classroom_remove_course().
+ */
+function classroom_forum_classroom_remove_course($course) {
+  // TODO
+}
+
+/**
+ * Implementation of hook_classroom_load_course().
+ */
+function classroom_forum_classroom_load_course($course) {
+  $result = db_query("SELECT forum_tid FROM {classroom_course} WHERE nid = %d",
+    $course->nid);
+  return db_fetch_array($result);
+}
+
+/**
+ * Implementation of hook_classroom_course_summary().
+ */
+function classroom_forum_classroom_course_summary($course) {
+  $limit = variable_get('classroom_forum_summary_limit', 5);
+  $tid = (int) $course->classroom_course['forum_tid']; 
+  $summary = array('title' => l(t('Forum'),"forum/$tid"));
+  if ($tid > 0) {
+    $topics = forum_get_topics($tid, 1, $limit);
+    $summary['content'] = theme('forum_topic_list', $tid, $topics, 1, $limit);
+    return array('forum_classroom' => $summary);
+  }
+  return false;
+}
+
+/**
+ * Implementation of hook_nodeapi
+ */
+function classroom_forum_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
+  if ($node->type != "forum") return;
+  switch ($op) {
+  case 'view':
+  case 'alter':
+    return _classroom_forum_node_breadcrumb($node);
+    break;
+  case 'prepare':
+    return _classroom_forum_node_breadcrumb();
+    break;
+  }
+}
+
+/**
+ * Function to draw the breadcrumb in the forum nodes
+ */
+function _classroom_forum_node_breadcrumb(&$node = NULL) {
+  if ($node != null) {
+    $course_node = classroom_forum_get_course_from_post($node);
+    $forum = classroom_forum_get_forum_from_post($node);
+  } else {
+    $course_node = classroom_forum_get_course_from_tid(arg(3));
+    $forum = taxonomy_get_term(arg(3));
+  }
+
+  $breadcrumb = array(
+    l(t("Home"), "<front>"),
+    l(t("Courses"), "classroom/"),
+    l($course_node->title, "classroom/course/".$course_node->nid),
+    l($forum->name, "classroom/course/".$course_node->nid."/forum"),
+  );
+
+  drupal_set_breadcrumb($breadcrumb);
+}
+
+/**
+ * Method to get the forum term from a node post
+ */
+function classroom_forum_get_forum_from_post($post) {
+  return taxonomy_get_term($post->tid);
+}
+
+/**
+ * Method to get the course node from a post of the forum
+ * associated to the course
+ */
+function classroom_forum_get_course_from_post($post) {
+  $forum = classroom_forum_get_forum_from_post($post);
+  return classroom_forum_get_course_from_tid($forum->tid);
+}
+
+/**
+ * Method to get the course from the tid of the forum
+ */
+function classroom_forum_get_course_from_tid($tid) {
+  $nids = db_fetch_array(db_query(
+    "SELECT nid FROM {classroom_course} WHERE forum_tid = %d",
+    $tid
+  ));
+
+  return node_load($nids['nid']);
+}
+
+/**
+ * Implementation of hook_classroom_perms().
+ */
+function classroom_forum_classroom_perms() {
+  return array(
+    'classroom_forum' => array(
+      'teacher' => array(
+        'create forum topics',
+        'edit any forum topic',
+        'delete any forum topic',
+      ),
+      'student' => array(
+        'create forum topics',
+        'edit own forum topics',
+        'delete own forum topics',
+      ),
+    )
+  );
+}

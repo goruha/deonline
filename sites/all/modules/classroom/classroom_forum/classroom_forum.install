@@ -1,0 +1,48 @@
+<?php
+// $Id: classroom_forum.install,v 1.2 2010/03/18 21:10:11 osoh Exp $
+
+/**
+ * Implementation of hook_install().
+ */
+function classroom_forum_install() {
+  $ret = array();
+  if (!db_column_exists('classroom_course', 'forum_tid')) {
+    db_add_field($ret, 'classroom_course', 'forum_tid',
+      array(
+        'type' => 'int',
+        'not null' => FALSE,
+        'unsigned' => TRUE,
+        'default' => NULL,
+      )
+    );
+  }
+}
+
+/**
+ * Implementation of hook_install().
+ */
+function classroom_forum_uninstall() {
+  $ret = array();
+  if (db_table_exists('classroom_course', 'forum_tid') &&
+     db_column_exists('classroom_course', 'forum_tid')) {
+    db_drop_field($ret, 'classroom_course', 'forum_tid');
+  }
+}
+
+/**
+ * Implementation of hook_update_N()
+ */
+function classroom_forum_update_6101() {
+  $ret = array();
+
+  $field_spec = array(
+    'type' => 'int',
+    'not null' => FALSE,
+    'unsigned' => TRUE,
+    'default' => NULL,
+  );
+
+  db_change_field($ret, 'classroom_course', 'forum_tid', 'forum_tid', $field_spec);
+
+  return $ret;
+}
