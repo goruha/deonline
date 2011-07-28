@@ -1,0 +1,5 @@
+name = Deonline formatters
+description = Provides custom formatters for deonline
+package = Custom
+core = 6.x
+

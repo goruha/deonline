@@ -2,3 +2,33 @@
 #block-user-0 {
   width: 490px;
 }
+
+#aToolTip {
+  width: 370px;
+}
+
+.levels-list tr.odd,
+.levels-list tr.even,
+.levels-list tr.odd td,
+.levels-list tr.even td {
+  background-color: #FDFFEF;
+  border: 1px solid #CCCCCC !important;
+}
+
+.levels-list td.views-field-name-1:hover {
+  background-color: #E3ECC0;
+  cursor: pointer;
+}
+
+#aToolTip ul li {
+    background: url("../images/list-level-1.png") no-repeat scroll 0 0 transparent;
+    font-family: "Myriad Pro","Myriad Web Pro Regular","Lucida Grande",Geneva,Trebuchet MS,sans-serif;
+    line-height: 100%;
+    list-style-image: none;
+    list-style-type: none;
+    padding: 0 0 9px 15px;
+}
+
+.prices-list td.views-field-body {
+  width: 300px;
+}

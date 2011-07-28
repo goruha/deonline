@@ -1,0 +1,5 @@
+name = Atool tip
+description = Provides integration with atooltip
+package = Custom
+core = 6.x
+

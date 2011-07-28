@@ -402,7 +402,7 @@ function video_convert_process(&$element) {
   $file = $element['#value'];
   // Add default dimensions from our default_value if needed
   if (!isset($file['data']['dimensions'])) {
-    $file['data']['dimensions'] = $element['data']['dimensions']['#value'];
+    $file['data']['dimensions'] = $element['data']['dimensions']['#default_value'];
   }
   $convert = false;
   //we need to check if this fid has already been added to the database AND that there is in fact a fid
@@ -732,7 +732,6 @@ function _video_aspect_ratio($video) {
   module_load_include('inc', 'video', '/includes/transcoder');
   $transcoder = new video_transcoder;
   $wxh = $transcoder->get_dimensions($video);
-  dpm($wxh);
   $width = $wxh['width'];
   $height = $wxh['height'];
 

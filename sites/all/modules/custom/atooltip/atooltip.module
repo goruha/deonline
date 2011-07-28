@@ -1,0 +1,33 @@
+<?php
+
+function atooltip_get_path() {
+  static $path;
+
+  if (isset($path)) {
+    return $path;
+  }
+  $path = FALSE;
+
+  // Libraries API integration.
+  if (function_exists('libraries_get_path')) {
+    $path = libraries_get_path('atooltip');
+    // Libraries API 1.x returns a default path; 2.x returns FALSE.
+    if ($path !== FALSE && !file_exists($path)) {
+      $path = FALSE;
+    }
+  }
+  // Manually check sites/all/libraries in case Libraries API is not available.
+  elseif (file_exists('./sites/all/libraries/atooltip')) {
+    $path = 'sites/all/libraries/atooltip';
+  }
+  
+  return $path;
+}
+
+function atooltip_init() {
+  $path = atooltip_get_path();
+  drupal_add_js(drupal_get_path('module', 'atooltip') . "/drupal_atooltip.js");
+  drupal_add_js("$path/js/jquery.atooltip.js");
+  drupal_add_css("$path/css/atooltip.css");
+  drupal_add_css("$path/css/style.css");
+}
