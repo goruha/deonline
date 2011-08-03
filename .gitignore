@@ -4,7 +4,6 @@ _properties
 _properties/**/*
 build.xml
 .idea/*
-sites/default/files/*
 sites/default/settings.php
 _db/*
 
