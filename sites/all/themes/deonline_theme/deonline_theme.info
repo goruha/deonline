@@ -1,15 +1,13 @@
 
 name = Deonline theme
 description = deonline theme
-base theme = acquia_marina
+base theme = mix_and_match
 core = 6.x
 engine = phptemplate
 
-stylesheets[all][] = css/fusion-acquia-marina-style.css
 stylesheets[all][] = css/custom.css
 
-scripts[] = js/jquery.corner.js
-scripts[] = js/acquia-marina-script.js
+scripts[] = js/jquery.equalheights.js
 
 regions[sidebar_first] = sidebar first
 regions[sidebar_last] = sidebar last
@@ -18,7 +16,6 @@ regions[header] = header
 regions[preface_top] = preface top
 regions[preface_bottom] = preface bottom
 regions[content_top] = content top
-regions[content] = content
 regions[content_bottom] = content bottom
 regions[postscript_top] = postscript top
 regions[postscript_bottom] = postscript bottom
@@ -41,97 +38,134 @@ settings[theme_grid] = grid16-960
 settings[theme_grid_options][] = grid16-960
 settings[theme_grid_options][] = grid16-fluid
 settings[fluid_grid_width] = fluid-100
-settings[theme_font_size] = font-size-12
+settings[theme_font_size] = font-size-13
 settings[sidebar_layout] = sidebars-split
 settings[sidebar_first_width] = 3
 settings[sidebar_last_width] = 3
+settings[mixnmatch_body_bg] = white
+settings[mixnmatch_page_bg] = no-page-bg
+settings[mixnmatch_accent_color] = gray-accents
+settings[mixnmatch_site_title] = default-title
+settings[mixnmatch_site_slogan] = default-slogan
+settings[mixnmatch_header_color] = default-headers
+settings[mixnmatch_link_color] = default-links
 
-; Inherit Skinr styles from parent themes
+; Inherit Skinr styles from Fusion Core
 skinr[options][inherit_skins] = true
 
 ; Disable 12 column grid block widths inherited from fusion_core
 skinr[grid12-width] =
 
-; Marina general styles
-skinr[marina-general-styles][title] = Acquia Marina - General theme styles
-skinr[marina-general-styles][type] = checkboxes
-skinr[marina-general-styles][features][] = block
-skinr[marina-general-styles][features][] = panels_display
-skinr[marina-general-styles][features][] = panels_pane
-skinr[marina-general-styles][features][] = panels_panel
-skinr[marina-general-styles][features][] = views_view
-skinr[marina-general-styles][options][1][label] = Rounded corners
-skinr[marina-general-styles][options][1][class] = marina-rounded-corners
+; Skinr styles
+skinr[background-color][title] = Background color
+skinr[background-color][type] = select
+skinr[background-color][description] = Select a background color for the block, node or comment.
+skinr[background-color][features][] = block
+skinr[background-color][features][] = node
+skinr[background-color][features][] = comment_wrapper
+skinr[background-color][features][] = panels_pane
+skinr[background-color][features][] = views_view
+skinr[background-color][options][1][label] = White
+skinr[background-color][options][1][class] = white-background
+skinr[background-color][options][2][label] = Black
+skinr[background-color][options][2][class] = black-background
+skinr[background-color][options][3][label] = Light Gray
+skinr[background-color][options][3][class] = gray-background
+skinr[background-color][options][4][label] = Medium Gray
+skinr[background-color][options][4][class] = med-gray-background
+skinr[background-color][options][5][label] = Dark Gray
+skinr[background-color][options][5][class] = dk-gray-background
+skinr[background-color][options][6][label] = Red
+skinr[background-color][options][6][class] = red-background
+skinr[background-color][options][7][label] = Dark Blue
+skinr[background-color][options][7][class] = blue-background
+skinr[background-color][options][8][label] = Light Blue
+skinr[background-color][options][8][class] = lt-blue-background
+skinr[background-color][options][9][label] = Dark Green
+skinr[background-color][options][9][class] = green-background
+skinr[background-color][options][10][label] = Light Green
+skinr[background-color][options][10][class] = lt-green-background
+skinr[background-color][options][11][label] = Dark Orange
+skinr[background-color][options][11][class] = orange-background
+skinr[background-color][options][12][label] = Light Orange
+skinr[background-color][options][12][class] = lt-orange-background
+skinr[background-color][options][13][label] = Green image
+skinr[background-color][options][13][class] = im-green-background
+skinr[background-color][options][14][label] = Yellow
+skinr[background-color][options][14][class] = yellow-background
 
-; Marina list styles
-skinr[marina-list-styles][title] = Acquia Marina - List styles
-skinr[marina-list-styles][type] = radios
-skinr[marina-list-styles][features][] = block
-skinr[marina-list-styles][features][] = panels_display
-skinr[marina-list-styles][features][] = panels_pane
-skinr[marina-list-styles][features][] = panels_panel
-skinr[marina-list-styles][features][] = views_view
-skinr[marina-list-styles][options][1][label] = Small text list with >>
-skinr[marina-list-styles][options][1][class] = marina-list-raquo
-skinr[marina-list-styles][options][2][label] = Large text list with green checkmarks (for Preface Top region)
-skinr[marina-list-styles][options][2][class] = marina-list-arrow-green
 
-; Marina block title styles
-skinr[marina-block-title-styles][title] = Acquia Marina - Block title styles
-skinr[marina-block-title-styles][type] = radios
-skinr[marina-block-title-styles][features][] = block
-skinr[marina-block-title-styles][features][] = panels_display
-skinr[marina-block-title-styles][features][] = panels_pane
-skinr[marina-block-title-styles][features][] = panels_panel
-skinr[marina-block-title-styles][features][] = views_view
-skinr[marina-block-title-styles][options][1][label] = Blue rounded title background with white text
-skinr[marina-block-title-styles][options][1][class] = marina-title-rounded-blue
-skinr[marina-block-title-styles][options][2][label] = Green rounded title background with white text
-skinr[marina-block-title-styles][options][2][class] = marina-title-rounded-green
-skinr[marina-block-title-styles][options][3][label] = Green title
-skinr[marina-block-title-styles][options][3][class] = marina-title-green
+skinr[header-background][title] = Header background color
+skinr[header-background][type] = select
+skinr[header-background][description] = Select a color if you would like a header background different from the body background.
+skinr[header-background][features][] = block
+skinr[header-background][features][] = panels_pane
+skinr[header-background][features][] = views_view
+skinr[header-background][options][1][label] = Black
+skinr[header-background][options][1][class] = black-header
+skinr[header-background][options][2][label] = Gray
+skinr[header-background][options][2][class] = gray-header
+skinr[header-background][options][3][label] = Red
+skinr[header-background][options][3][class] = red-header
+skinr[header-background][options][4][label] = Blue
+skinr[header-background][options][4][class] = blue-header
+skinr[header-background][options][5][label] = Green
+skinr[header-background][options][5][class] = green-header
+skinr[header-background][options][6][label] = Orange
+skinr[header-background][options][6][class] = orange-header
+skinr[header-background][options][7][label] = Yellow
+skinr[header-background][options][7][class] = yellow-header
 
-; Marina block title icon styles
-skinr[marina-block-title-icon-styles][title] = Acquia Marina - Block title icon styles
-skinr[marina-block-title-icon-styles][type] = select
-skinr[marina-block-title-icon-styles][features][] = block
-skinr[marina-block-title-icon-styles][features][] = panels_display
-skinr[marina-block-title-icon-styles][features][] = panels_pane
-skinr[marina-block-title-icon-styles][features][] = panels_panel
-skinr[marina-block-title-icon-styles][features][] = views_view
-skinr[marina-block-title-icon-styles][options][1][label] = Bubble
-skinr[marina-block-title-icon-styles][options][1][class] = icon-bubble title-icon
-skinr[marina-block-title-icon-styles][options][2][label] = Calendar
-skinr[marina-block-title-icon-styles][options][2][class] = icon-calendar title-icon
-skinr[marina-block-title-icon-styles][options][3][label] = Chalkboard
-skinr[marina-block-title-icon-styles][options][3][class] = icon-chalkboard title-icon
-skinr[marina-block-title-icon-styles][options][4][label] = Chat bubbles
-skinr[marina-block-title-icon-styles][options][4][class] = icon-chatbubbles title-icon
-skinr[marina-block-title-icon-styles][options][5][label] = Color chart
-skinr[marina-block-title-icon-styles][options][5][class] = icon-colorchart title-icon
-skinr[marina-block-title-icon-styles][options][6][label] = Flag
-skinr[marina-block-title-icon-styles][options][6][class] = icon-flag title-icon
-skinr[marina-block-title-icon-styles][options][7][label] = Gears
-skinr[marina-block-title-icon-styles][options][7][class] = icon-gears title-icon
-skinr[marina-block-title-icon-styles][options][8][label] = Home
-skinr[marina-block-title-icon-styles][options][8][class] = icon-home title-icon
-skinr[marina-block-title-icon-styles][options][9][label] = Keys
-skinr[marina-block-title-icon-styles][options][9][class] = icon-keys title-icon
-skinr[marina-block-title-icon-styles][options][10][label] = Newspaper
-skinr[marina-block-title-icon-styles][options][10][class] = icon-newspaper title-icon
-skinr[marina-block-title-icon-styles][options][11][label] = Notepad
-skinr[marina-block-title-icon-styles][options][11][class] = icon-notepad title-icon
-skinr[marina-block-title-icon-styles][options][12][label] = Photo
-skinr[marina-block-title-icon-styles][options][12][class] = icon-photo title-icon
-skinr[marina-block-title-icon-styles][options][13][label] = RSS
-skinr[marina-block-title-icon-styles][options][13][class] = icon-rss title-icon
-skinr[marina-block-title-icon-styles][options][14][label] = Search
-skinr[marina-block-title-icon-styles][options][14][class] = icon-search title-icon
-skinr[marina-block-title-icon-styles][options][15][label] = Star
-skinr[marina-block-title-icon-styles][options][15][class] = icon-star title-icon
-; Information added by drupal.org packaging script on 2010-10-25
-version = "6.x-3.1"
+
+skinr[title-color][title] = Header text color
+skinr[title-color][type] = select
+skinr[title-color][description] = Select a color for the block or node title text.
+skinr[title-color][features][] = block
+skinr[title-color][features][] = panels_pane
+skinr[title-color][features][] = views_view
+skinr[title-color][options][1][label] = White
+skinr[title-color][options][1][class] = white-title
+skinr[title-color][options][2][label] = Black
+skinr[title-color][options][2][class] = black-title
+skinr[title-color][options][3][label] = Gray
+skinr[title-color][options][3][class] = gray-title
+skinr[title-color][options][4][label] = Red
+skinr[title-color][options][4][class] = red-title
+skinr[title-color][options][5][label] = Blue
+skinr[title-color][options][5][class] = blue-title
+skinr[title-color][options][6][label] = Green
+skinr[title-color][options][6][class] = green-title
+skinr[title-color][options][7][label] = Orange
+skinr[title-color][options][7][class] = orange-title
+
+skinr[link-color][title] = Link text color
+skinr[link-color][type] = select
+skinr[link-color][description] = Select a color for the link text.
+skinr[link-color][features][] = block
+skinr[link-color][features][] = node
+skinr[link-color][features][] = comment_wrapper
+skinr[link-color][features][] = panels_pane
+skinr[link-color][features][] = views_view
+skinr[link-color][options][1][label] = White
+skinr[link-color][options][1][class] = block-white-links
+skinr[link-color][options][2][label] = Black
+skinr[link-color][options][2][class] = block-black-links
+skinr[link-color][options][3][label] = Dark Gray
+skinr[link-color][options][3][class] = block-gray-links
+skinr[link-color][options][4][label] = Light Gray
+skinr[link-color][options][4][class] = block-lt-gray-links
+skinr[link-color][options][5][label] = Red
+skinr[link-color][options][5][class] = block-red-links
+skinr[link-color][options][6][label] = Blue
+skinr[link-color][options][6][class] = block-blue-links
+skinr[link-color][options][7][label] = Green
+skinr[link-color][options][7][class] = block-green-links
+skinr[link-color][options][8][label] = Orange
+skinr[link-color][options][8][class] = block-orange-links
+
+
+; Information added by drupal.org packaging script on 2011-01-15
+version = "6.x-1.6"
 core = "6.x"
-project = "acquia_marina"
-datestamp = "1288032028"
-
+project = "mix_and_match"
+datestamp = "1295107903"

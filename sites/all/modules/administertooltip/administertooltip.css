@@ -1,0 +1,141 @@
+
+/* Default items */
+#administertooltip_messages {
+  display: inline;
+}
+.administertooltip_wrapper {
+  position: relative;
+  padding: 0;
+  margin: 0;
+  width: auto;
+}
+.btwrapper {
+  margin-top: 20px;
+}
+.bt-content .administertooltip {
+  display: block; /* without this IE doesn't show the administer tool tips */
+}
+.administertooltip_region {
+  display: none !important;
+}
+.administertooltip {
+  display: none;
+}
+
+/* Style the selection rectangle */
+.administertooltip_hover {
+  outline: 1px solid #67ABCF;
+}
+.administertoolregion_hover {
+  position: absolute;
+  top: 0;
+  padding: 4px;
+  background: #EEE;
+}
+.administertooltip_placeholder {
+  background: #97DBFF;
+  -ms-filter:"progid:DXImageTransform.Microsoft.Alpha(Opacity=40)";
+  filter: alpha(opacity=40);
+  opacity: .4;
+}
+
+/* Style the icons */
+.administertooltip_icons {
+  position: absolute;
+  margin: 0;
+  color: #FFF;
+  font-size: 87%;
+  z-index: 999;
+  display: none;
+  right: 0;
+  top: 1px;
+}
+.administertooltip_handle {
+  cursor: pointer;
+  background: #67ABCF;
+  padding: 5px;
+}
+.administertooltip_dragger {
+  cursor: move;
+  background: #67ABCF;
+  padding: 5px;
+  margin-left: 2px;
+}
+.administertooltip_handle:hover, .administertooltip_dragger:hover {
+  background: #A1DAF8;
+}
+
+/* Style the administertooltip area's. */
+.administertooltip-area {
+  color: #000 !important;
+  padding: 10px;
+  border-bottom: 1px solid #67ABCF;
+}
+.administertooltip-header,
+.administertooltip-footer {
+  padding: 10px;
+  background: #67ABCF;
+}
+.administertooltip_header {
+  padding: 10px 10px 10px 50px;
+  background: #67ABCF url('images/i_settings.png') no-repeat 10px 10px;
+  min-height: 40px;
+}
+.administertooltip_header h2 {
+  margin: 3px 0px 0px 0px;
+  font-size: 120%;
+  color: #000;
+}
+.administertooltip-for-block .administertooltip_header {
+  background-image: url('images/i_block.png');
+}
+.administertooltip-for-views_view .administertooltip_header {
+  background-image: url('images/i_view.png');
+}
+.administertooltip-for-node .administertooltip_header,
+.administertooltip-for-comment .administertooltip_header {
+  background-image: url('images/i_comment.png');
+}
+
+/* Style the items within the tip. */
+.administertooltip_links a:link,
+.administertooltip_links a:visited {
+  color: #000 !important;
+  margin: 3px 0px;
+  display: block;
+  padding: 3px 0px 3px 15px;
+  background: url('images/i_bullet.png') no-repeat 3px 9px;
+}
+/* Make sure that form items are neatly inline */
+.administertooltip_actions:after {
+  content: ".";
+  display: block;
+  clear: both;
+  visibility: hidden;
+  line-height: 0;
+  height: 0;
+}
+.administertooltip_actions {
+  display: inline-block;
+}
+.administertooltip .form-select,
+.administertooltip .form-item label,
+.administertooltip .form-item input,
+.administertooltip .form-item {
+  margin: 0px 0 2px;
+}
+html[xmlns] .administertooltip_actions {
+  display: block;
+}
+* html .administertooltip_actions {
+  height: 1%;
+}
+
+.administertooltip .form-item {
+  margin-top: 5px;
+  float: left;
+}
+.administertooltip .button, .administertooltip .form-submit {
+  margin-top: 5px;
+  float: right;
+}

@@ -1,0 +1,22 @@
+
+The Administertooltip module has its roots in madcap's own theme "Madtheme". It started with
+a simple link on a block and from there it grew to be a standard functionality
+within that theme. At some point there was an idea that this functionality could
+also be in a seperate module where hooks could add more links on the administertooltips.
+After a little proof of concept Kevin Franke and Jaap Broeders started to professionalize the module
+and create an internal alpha version to be tested.
+
+- The Drupal Project <development@drupal.org>
+For creating a flexible content management platform which fits almost all needs.
+
+- Madcap BV <info@madcap.nl>
+For creating the opportunity to spend some hours on this project.
+
+- Kevin Franke <kevin@madcap.nl>
+Design, javascript and functional design of the madtheme and this module.
+
+- Robin Ambachtsheer <robin@madcap.nl>
+Improvements of the administertooltip functionality in madtheme which are also in this module.
+
+- Jaap Broeders <j.broeders@madcap.nl>
+Porting the administertooltip from the madtheme to the module and code.

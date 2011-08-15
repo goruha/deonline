@@ -8,7 +8,7 @@
 
 
 Drupal.behaviors.drupal_atooltip = function(context) {
-  $('.views-field-name-1').each(function () {
+  $('.atooltip').each(function () {
     $(this).aToolTip({
       // no need to change/override
       closeTipBtn: 'aToolTipCloseBtn',
@@ -20,7 +20,7 @@ Drupal.behaviors.drupal_atooltip = function(context) {
       center: true,
       outSpeed: 100,                  // Speed tooltip fades out
       tipContent: 'Hello I am aToolTip with content from param',
-      toolTipClass: 'defaultTheme',   // Set class name for custom theme/styles
+      toolTipClass: 'defaultTheme'   // Set class name for custom theme/styles
     });
   });
 }

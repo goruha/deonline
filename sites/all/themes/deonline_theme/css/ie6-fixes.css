@@ -1,110 +1,41 @@
-/* $Id: ie6-fixes.css 8054 2010-10-22 17:26:55Z jeremy $ */
+/* $Id: ie6-fixes.css,v 1.2 2010/11/01 17:37:53 aross Exp $ */ 
 
-/* Pager - current */
-.item-list ul.pager li.pager-current {
-  margin-right: 2px;
-  padding-right: 3px;
+/**
+ * @file
+ * Put fixes for IE6 here
+ */
+
+/* Alpha transparency png fix */
+div.pngfix,
+#logo img {
+  behavior: url(/sites/all/themes/fusion/fusion_core/js/iepngfix.htc);
 }
 
-/* Marina - Title - Rounded Blue/Green */
-.marina-title-rounded-blue h2.block-title,
-.marina-title-rounded-green h2.block-title {
-  width: auto;
+/* ------------------------- PRIMARY MENU ------------------------- */
+/* When use a white background, primary menu is wider than rest of
+ * body.  Still not perfect with all layouts; may need to be
+ * adjusted for a specific site configuration.
+ */
+.primary-menu {
+  width: 99%;
 }
 
-.marina-rounded-corners.marina-title-rounded-blue h2.block-title,
-.marina-rounded-corners.marina-title-rounded-green h2.block-title {
-  margin-top: 0;
-}
-
-.marina-rounded-corners .inner-wrapper .inner-inner {
-  padding-top: 0; 
-}
-
-/* Marina - Icons */
-.title-icon .block-icon,
-#comments .block-icon {
-  left: 4px;
-  top: 2px;
-}
-
-/* Search */
-#search-box-inner {
-  width: 262px;
-}
-
-.search-box-inner input.search-submit {
-  margin: 0 0 0 4px;
-  padding: 2px;
-}
-
-/* Primary menu */
-#primary-menu-inner ul.menu {
+/* ------------------------- SEARCH FORM IN HEADER ----------------- */
+#search-input .form-text {
   float: right;
+  margin-right: 18px;
 }
 
-#primary-menu ul.menu li:hover ul.menu,
-#primary-menu ul.menu li.hover ul.menu,
-#primary-menu ul.menu li.sfHover ul.menu {
-  margin-top: -4px;
-}
+/* -------------------------------- BLOCKS ------------------------- */
 
-/* Preface top and Postscript bottom */
-.preface-top-wrapper,
-.postscript-bottom-wrapper {
-  height: 24px; /* Set heights rather than min-height as IE6 doesn't understand min-height */
-}
-
-/* Header */
-#search-box {
-  float: none;
-}
-
-/* Secondary menu */
-#secondary-menu.block {
-  margin-bottom: 0;
-}
-
-#secondary-menu.block ul.links {
-  float: right;
-}
-
-#header-site-info.block {
-  float: left;
-  width: 50%;
-}
-
-/* Comments */
-#comments .marina-rounded-corners .corner-bottom {
-  margin-top: -2px;
+.fusion-list-bottom-border .inner ul li,
+.fusion-list-bottom-border .view-content div.views-row {
+  list-style-image: none;
+  border-bottom-color: #ddd;
 }
 
 
-/* Rounded corners
-/-------------------------------------------------------------- */
-div.corner-top-left, 
-div.corner-top-right, 
-div.corner-bottom-left, 
-div.corner-bottom-right { 
-  font-size: 2px;                                 /* IE div correction */
-  height: 8px;                                    /* height of an image corner */
-  position: relative;
-}
-
-.corner-top,
-.corner-bottom {
-  position: relative;
-  z-index: 100;
-}
 
 
-/* Fluid width
-/-------------------------------------------------------------- */
-.grid-type-fluid #header-top,
-.grid-type-fluid #header-group,
-.grid-type-fluid #preface-top,
-.grid-type-fluid #page-inner {
-  margin: 0 auto;
-  width: expression((document.body.clientWidth > 1141)? "1140px" : "auto");
-  max-width: 1140px;
-}
+
+

@@ -1,0 +1,396 @@
+<?php
+
+/**
+ * @file
+ * Provides a administer tool tip on entities with links,
+ * actions and information. This module is extendable by
+ * hooks, so that each module can add extra links and
+ * actions to the tips.
+ *
+ * A tip is entity specific and is composed of the area's:
+ * information, links and actions.
+ *
+ * The tip is extendable by other modules via the global
+ * hook_administertooltip() function.
+ * It should return an array with as key the entity and
+ * then an array of one or more areas containing items
+ * for in that specific area. First param is the default
+ * array "$variables" that is received from the common
+ * "preprocess" functions.
+ *
+ * The tip is also extendable by hooks for each of the
+ * entities, e.g.: hook_administertooltip_node().
+ * It should return an array with one or more areas just
+ * as the global hook.
+ *
+ * Even further the area in a tip on an entity as a
+ * hook itself, e.g.: hook_administertooltip_node_links().
+ * In this case it should return an array with links.
+ */
+
+/**
+ * Default Drupal functions.
+ */
+
+/**
+ * Implements hook_perm().
+ */
+function administertooltip_perm() {
+  return array('access administer tooltips', 'drag and drop blocks', 'configure administer tooltips');
+}
+
+/**
+ * Implements hook_init().
+ */
+function administertooltip_init() {
+  global $_administertooltip_forms, $theme_key;
+
+  // Get default tip-items for supported entities.
+  $entities = _administertooltip_get_entities();
+  foreach ($entities as $entity => $array) {
+    module_load_include('inc', 'administertooltip', 'entities/' . $entity . '.administertooltip');
+  }
+
+  // Add javascript and css.
+  drupal_add_css(drupal_get_path('module', 'administertooltip') . '/administertooltip.css');
+  drupal_add_js(drupal_get_path('module', 'administertooltip') . '/js/administertooltip.js');
+
+  // Add beautytips.
+  if (function_exists('beautytips_add_beautytips')) {
+    beautytips_add_beautytips();
+  }
+
+  // If drag and drop is enabled add jquery_ui and add some elements to regions.
+  $dragndrop = variable_get('administertooltip_dragndrop', FALSE);
+  if ($dragndrop && user_access('drag and drop blocks') && user_access('administer blocks') && jquery_ui_get_version()) {
+    jquery_ui_add(array('ui.draggable', 'ui.droppable', 'ui.sortable'));
+    // Various modules may change the theme depending on request.
+    init_theme();
+    $block_regions = system_region_list($theme_key);
+    foreach ($block_regions as $key => $value) {
+      drupal_set_content($key, '<span class="administertooltip_region" administertooltip-region="' . $key . '">'. $key .'</span>');
+    }
+    drupal_add_js(drupal_get_path('module', 'administertooltip') . '/js/administertooltip_dragndrop.js');
+  }
+
+  // Initialize an array which keeps track of all forms within administer tool tips.
+  $_administertooltip_forms = array();
+}
+
+/**
+ * Implements hook_menu().
+ */
+function administertooltip_menu() {
+  $items = array();
+
+  $items['admin/settings/administertooltip'] = array(
+    'title' => 'Administer tool tip',
+    'description' => 'Settings for the administer tool tip module.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('administertooltip_admin_settings'),
+    'access arguments' => array('configure administer tooltips'),
+    'file' => 'administertooltip.admin.inc',
+  );
+  $items['administertooltip/update'] = array(
+    'title' => 'Update Administer tool tip',
+    'page callback' => '_administertooltip_update',
+    'access arguments' => array('access administer tooltips'),
+    'type' => MENU_CALLBACK,
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_theme().
+ */
+function administertooltip_theme() {
+  $return =  array();
+  $return['administertooltip'] = array('arguments' => array('hook' => NULL, 'variables' => array()) );
+  $return['administertooltip_header'] = array('arguments' => array('info' => NULL) );
+  $return['administertooltip_footer'] = array('arguments' => array('info' => NULL) );
+  return $return;
+}
+
+/**
+ * Implements hook_forms().
+ *
+ * Here we look for a unique form_id that has been implemented by "administertooltip_get_form()"
+ * and give it it's default form handler.
+ */
+function administertooltip_forms($form_id) {
+  global $_administertooltip_forms;
+
+  $forms = array();
+  foreach ($_administertooltip_forms as $i => $form_function) {
+    if ($form_function .'_'. $i == $form_id) {
+      $forms[$form_id] = array(
+        'callback' => $form_function,
+      );
+    }
+  }
+  return $forms;
+}
+
+/**
+ * Implements hook_preprocess_block().
+ */
+function administertooltip_preprocess_block(&$variables) {
+  if (_administertooltip_preprocess_access('block')) {
+    $variables['block']->content .= theme('administertooltip', 'block', $variables);
+  }
+}
+
+/**
+ * Implements hook_preprocess_comment().
+ */
+function administertooltip_preprocess_comment(&$variables) {
+  if (_administertooltip_preprocess_access('comment')) {
+    $variables['links'] = ''; // Remove administration links.
+    $variables['content'] .= theme('administertooltip', 'comment', $variables);
+  }
+}
+
+/**
+ * Implements hook_preprocess_node().
+ */
+function administertooltip_preprocess_node(&$variables) {
+  if (_administertooltip_preprocess_access('node')) {
+      // Content type settings.
+      $node = $variables['node'];
+      $allowed_nodes = variable_get('administertooltip_content_types', array_keys(node_get_types('names')));
+      if ($allowed_nodes[$node->type] !== $node->type) {
+        return;
+      }
+      // Calculate whether the node edit links should be displayed based on settings for display mode.
+      $display_options = variable_get('administertooltip_display_options', 'both');
+      if ($display_options == 'none' || ($display_options == 'teaser' && $variables['page']) || ($display_options == 'full' && !$variables['page'])) {
+        return;
+      }
+      // Add a administer tool tip to the author of the node.
+      if (variable_get('administertooltip_user_link_enabled', 1)) {
+        $variables['submitted'] .= $variables['administertooltip_submitted'] = theme('administertooltip', 'user_link', $variables);
+      }
+      $variables['content'] .= theme('administertooltip', 'node', $variables);
+  }
+}
+
+/**
+ * Implements hook_preprocess_page().
+ */
+function administertooltip_preprocess_page(&$variables) {
+  if (_administertooltip_preprocess_access('page')) {
+    // Page has several sub-entities wich may have tips
+    $entities = _administertooltip_get_entities();
+    if (isset($entities['page'])) {
+      foreach ($entities['page'] as $entity) {
+        $variables[$entity] .= theme('administertooltip', $entity, $variables);
+      }
+    }
+    // Add a surrounding div to the standard theme to make it accessible to javascript messages.
+    $variables['messages'] .= '<div id="administertooltip_messages"></div>';
+  }
+}
+
+/**
+ * Implements hook_preprocess_user_profile().
+ */
+function administertooltip_preprocess_user_profile(&$variables) {
+  if (_administertooltip_preprocess_access('user_profile')) {
+    $variables['user_profile'] .= theme('administertooltip', 'user_profile', $variables);
+  }
+}
+
+/**
+ * Implements hook_preprocess_user_picture().
+ */
+function administertooltip_preprocess_user_picture(&$variables) {
+  if (_administertooltip_preprocess_access('user_picture')) {
+    $variables['picture'] .= theme('administertooltip', 'user_picture', $variables);
+  }
+}
+
+/**
+ * Implements hook_preprocess_views_view().
+ */
+function administertooltip_preprocess_views_view(&$variables) {
+  if (_administertooltip_preprocess_access('views')) { // "Views" is better to read than "views_view".
+    $variables['footer'] .= theme('administertooltip', 'views_view', $variables);
+  }
+}
+
+/**
+ * Implements hook_views_api().
+ */
+function administertooltip_views_api() {
+  return array('api' => 2);
+}
+
+/**
+ * Drupal alternatives.
+ */
+
+/**
+ * Replacement of "drupal_get_form()".
+ *
+ * Function to change the form_id of forms within tips.
+ * This is done to make sure that the right form is submitted.
+ * Drupal cannot handle multiple implementations of one form on one page.
+ */
+function administertooltip_get_form($form_id) {
+  global $_administertooltip_forms;
+  $_administertooltip_forms[] = $form_id;
+  $args = func_get_args();
+  array_shift($args);
+  array_unshift($args, $form_id .'_'. (count($_administertooltip_forms)-1));
+  return call_user_func_array('drupal_get_form', $args);
+}
+
+/**
+ * Helper functions.
+ */
+
+/**
+ * Ajax wrapper-function.
+ */
+function _administertooltip_update() {
+  $status = "ok";
+  if (!empty($_GET['entity'])) {
+    switch ($_GET['entity']) {
+      case "block":
+        $status = _administertooltip_update_block();
+        break;
+    }
+
+  }
+  return drupal_json(array("status" => $status));
+}
+
+/**
+ * Helper function to get all supported entities.
+ */
+function _administertooltip_get_entities() {
+  return array(
+    'block' => array('block'),
+    'comment' => array('content'),
+    'node' => array('content'),
+    'page' => array('mission', 'breadcrumb', 'header', 'footer_message', 'search_box'),
+    'user_profile' => array('user_profile'),
+    'user_picture' => array('picture'),
+    'user_link' => array(),
+    'views' => array('footer'),
+  );
+}
+
+/**
+ * Helper function to get the different items in a tip.
+ * First we have the standard areas which are extendable by other modules.
+ */
+function _administertooltip_get_tip_areas() {
+  return array('links', 'actions');
+}
+
+/**
+ * Helper function to see if we may add an administer tool tip to
+ * the content of a preprocess-function.
+ */
+function _administertooltip_preprocess_access($hook) {
+  // Nothing to do here if the user is not permitted to access administer tool tip.
+  if (!user_access('access administer tooltips')) {
+    return FALSE;
+  }
+  // Is the administer tool tip enabled for this entity?
+  if (!variable_get('administertooltip_'. $hook .'_enabled', 1)) {
+    return FALSE;
+  }
+  return TRUE;
+}
+
+/**
+ * Theme functions.
+ */
+function theme_administertooltip_header($info) {
+  $return = "";
+  if (isset($info['header']) && is_array($info['header']) && count($info['header']) > 0) {
+    if (!empty($info['header']['icon'])) $return .= $info['header']['icon'];
+    if (!empty($info['header']['title'])) $return .= '<h2>'. $info['header']['title'] .'</h2>';
+    if (!empty($info['header']['description'])) $return .= $info['header']['description'];
+  }
+  if (!empty($return)) {
+    $return = "<div class='administertooltip-area administertooltip_header'>". $return ."</div>";
+  }
+  return $return;
+}
+
+function theme_administertooltip_footer($info) {
+  $return = "";
+  if (isset($info['footer']) && is_array($info['footer']) && count($info['footer']) > 0) {
+    if (!empty($info['footer']['icon'])) $return .= $info['footer']['icon'];
+    if (!empty($info['footer']['title'])) $return .= '<b>'. $info['footer']['title'] .'</b>';
+    if (!empty($info['footer']['description'])) $return .= $info['footer']['description'];
+  }
+  if (!empty($return)) {
+    $return = "<div class='administertooltip-area administertooltip_footer'>". $return ."</div>";
+  }
+  return $return;
+}
+
+/**
+ * Theme the administer tool tip for a specific element.
+ */
+function theme_administertooltip($hook, $variables=array()) {
+  $output = '';
+  $tip_areas =_administertooltip_get_tip_areas();
+
+  // Get some info for the specific hook.
+  $info = array('handle' => array('title' => t('edit') ));
+  $info_hook = module_invoke_all('administertooltip_'. $hook .'_data', $variables);
+  $info = array_merge($info, $info_hook);
+
+  // Standard hook_administertooltip().
+  $items = module_invoke_all('administertooltip', $variables);
+
+  // Add hook_administertooltip_ENTITY().
+  $items_hook = module_invoke_all('administertooltip_'. $hook, $variables);
+  if (count($items_hook) > 0) {
+    if (isset($items[$hook]) && is_array($items[$hook])) $items[$hook] = array_merge_recursive($items[$hook], $items_hook);
+    else $items[$hook] = $items_hook;
+  }
+
+  // A tip consists of multiple areas.
+  foreach ($tip_areas as $area) {
+
+    // Call hook_administertooltip_ENTITY_AREA().
+    $items_area = module_invoke_all('administertooltip_'. $hook .'_'. $area, $variables);
+    if (isset($items[$hook][$area]) && is_array($items[$hook][$area])) {
+      $items[$hook][$area] = array_merge($items[$hook][$area], $items_area);
+    }
+    else $items[$hook][$area] = $items_area;
+
+    // If there are items for this element.
+    if (isset($items[$hook][$area]) && is_array($items[$hook][$area]) && count($items[$hook][$area]) > 0) {
+      $output .= "<div class='administertooltip-area administertooltip_". $area ."'>\n";
+      // Browse trough the list of item-links.
+      foreach ($items[$hook][$area] as $link) {
+        $output .= $link;
+      }
+      $output .= "</div>\n";
+    }
+  }
+  $tip = '';
+  if (!empty($output)) {
+    $tip .= "<div class='administertooltip administertooltip-for-". $hook ."'>";
+    $tip .= theme('administertooltip_header', $info) . $output . theme('administertooltip_footer', $info);
+
+    $tip .= "<div class='administertooltip_icons'>";
+    $tip .= "<span class='administertooltip_handle administertooltip-tip-for-". $hook ."'>". $info['handle']['title'] ."</span>";
+    $dragndrop = variable_get('administertooltip_dragndrop', FALSE);
+    if ($dragndrop && $hook == "block" && user_access('drag and drop blocks') && user_access('administer blocks') && jquery_ui_get_version()) {
+      // We use strange attributes to know exactly what block we are dealing with in the javascript ajax-call.
+      $tip .= "<span class='administertooltip_dragger' id='attdrgr_". $variables['block']->module ."' nr='". $variables['block']->delta ."'>+</span>";
+    }
+    $tip .= "</div></div>";
+  }
+  return $tip;
+}
+

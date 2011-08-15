@@ -32,3 +32,61 @@
 .prices-list td.views-field-body {
   width: 300px;
 }
+
+div.view-program-types div.views-row {
+    background-color: #FDFFEF;
+    border: 1px solid #CCCCCC !important;
+    float: right;
+    height: 17px;
+    padding: 10px 0px;
+    text-align: center;
+}
+
+div.view-program-types div.views-row:hover {
+  background-color: #E3ECC0;
+  cursor: pointer;
+}
+
+body#pid-node-32 div.main-group div#content-inner.block {
+  overflow: visible;
+}
+
+.levels-list tr.odd,
+.levels-list tr.even,
+.levels-list tr.odd td,
+.levels-list tr.even td {
+
+}
+
+.im-green-background {
+    background: url("../images/background.jpg") repeat scroll 0 0 transparent;
+}
+
+.yellow-background .main-wrapper {
+  background-color: #ece49d;
+}
+
+.red-background .inner {
+  background-color: #f4cb83;
+}
+
+
+.main-wrapper .block .inner {
+  margin: 0;
+}
+
+#program-descirption {
+    background-color: #FDFFEF;
+    border: 1px solid #CCCCCC !important;
+    margin-left: 10px;
+    width: 208px;
+  overflow: hidden !important;
+}
+
+.oveflow-show {
+  overflow: visible;
+}
+
+div.cover div.info {
+  display: none;
+}

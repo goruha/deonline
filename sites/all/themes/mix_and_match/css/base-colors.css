@@ -556,7 +556,7 @@ form input.form-submit {
 /* PRIMARY MENU */
 .red-accents .primary-menu,
 .red-accents form input.form-submit {
-  background: #A51D1D url(../images/nav-bg-red.gif) top left repeat-x;
+  background: #A51D1D url(../images/nav-bg-red.gif) top left repeat-x; 
   border-bottom: 1px solid #A4141E;
 }
 

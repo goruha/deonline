@@ -7,7 +7,7 @@
  * To change this template use File | Settings | File Templates.
  */
 
-function deonline_theme_preprocess_views_view_table__levels__page_1(&$vars) {
+function deonline_theme_preprocess_views_view_table__levels(&$vars) {
   $vars['real_rows'] = array();
   $cols = array();
   foreach ($vars['rows'] as $item) {
@@ -30,3 +30,21 @@ function deonline_theme_preprocess_views_view_table__levels__page_1(&$vars) {
     $vars['real_rows'][] = $temp;
   }
 }
+
+function deonline_theme_preprocess_views_view_unformatted__program_types__default(&$vars) {
+  drupal_add_js($vars['directory'] .'/js/programms.js');
+  $vars['image'] = theme_image($vars['directory'] .'/images/gruen_100.png', '', '', array('id' => 'gruen-image'));
+  $count = count($vars['rows']);
+  foreach($vars['rows'] as $id => $row) {
+    $weight = 8 - $count + $id;
+    $vars['classes'][$id] .=  " clear grid16-$weight ";
+  }
+}
+
+/**
+ * Override or insert PHPTemplate variables into the templates.
+ */
+function deonline_theme_preprocess_page(&$vars) {
+
+}
+

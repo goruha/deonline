@@ -1,0 +1,17 @@
+<?php
+// $Id: views_header_nodes.module,v 1.1 2010/05/11 16:08:20 joachim Exp $
+
+/**
+ * @file
+ * TODO: Enter file description here.
+ */
+
+/**
+ * Implementation of hook_views_api().
+ */
+function views_header_nodes_views_api() {
+  return array(
+    'api' => 2,
+    'path' => drupal_get_path('module', 'views_header_nodes') ,
+  );
+}

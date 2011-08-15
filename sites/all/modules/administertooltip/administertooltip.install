@@ -1,0 +1,22 @@
+<?php
+
+/**
+ * @file
+ * Install file of the administertooltip module.
+ */
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function administertooltip_uninstall() {
+
+  variable_del('administertooltip_dragndrop');
+  variable_del('administertooltip_content_types');
+  variable_del('administertooltip_display_options');
+  variable_del('administertooltip_user_link_enabled');
+
+  $entities = _administertooltip_get_entities();
+  foreach ($entities as $entity => $array) {
+    variable_del('administertooltip_'. $entity .'_enabled');
+  }
+}
