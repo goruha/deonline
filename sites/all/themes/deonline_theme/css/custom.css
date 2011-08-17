@@ -90,3 +90,21 @@ body#pid-node-32 div.main-group div#content-inner.block {
 div.cover div.info {
   display: none;
 }
+
+div.view-program-types div.inner div.view-content {
+  padding: 0;
+  margin: 0;
+}
+
+/* FORM SUBMIT BUTTON */
+.red-accents a.link-button,
+.view-program-types .views-showcase-big-panel .field-content a {
+  background: #A51D1D url(../images/nav-bg-red.gif) top left repeat-x;
+  border-bottom: 1px solid #A4141E;
+  border-top: 1px solid #D73131;
+  border-right: 1px solid #A4141E; /* LTR */
+  border-left: 1px solid #D73131; /* LTR */
+  color: #FFF;
+  font-weight: bold;
+  padding: 4px;
+}
