@@ -79,7 +79,7 @@ function theme_skype_status($name, $buttonstyle, $status) {
   $path = base_path() . drupal_get_path('module', 'skype_status') . '/images/' . $buttonstyle . '/'. (int)$status['num'] . '.png';
   $text = (in_array($buttonstyle, array('mediumicon', 'smallicon'))) ? '&nbsp;' . $status['text'] : '';
   $image = '<img src="' . $path . '" style="border: none;" alt="' . $alt . '" />';
-  if ($status['num'] == 0 || $status['num'] == 1) {
+  if (empty($name)) {
     return $image;
   }
   return '<a href="skype:' . $name . '?call">' . $image . $text . '</a>';
