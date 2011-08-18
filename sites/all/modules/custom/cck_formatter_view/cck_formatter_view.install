@@ -1,0 +1,92 @@
+<?php
+
+function cck_formatter_view_schema() {
+    $schema['cck_formatter_views_formatters'] = array(
+    'fields' => array(
+      'id' => array(
+        'description' => t('The primary identifier for an dynamic formatter.'),
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+            
+      'name' => array(
+        'description' => t('Machine readable name of formatter'),
+        'type' => 'varchar',
+        'length' => 50,
+        'not null' => TRUE,
+      ),
+      
+      'label' => array(
+        'description' => t('Machine readable name of formatter'),
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      
+      'field_types' => array(
+        'description' => t('Array of content types this formatter for'),
+        'type' => 'text',
+        'size' => 'medium',
+        'not null' => TRUE,
+       	'serialize' => TRUE,
+      ),
+      
+      'type' => array(
+        'description' => t('Type of formatter.'),
+        'type' => 'int',
+        'unsigned' => TRUE,      
+        'not null' => TRUE,
+      ),
+      
+      'view' => array(
+        'description' => t('View name to use.'),
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      
+      'display' => array(
+        'description' => t('View display to use.'),
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+            
+      'options' => array(
+        'description' => t('Additional options'),
+        'type' => 'text',
+        'size' => 'medium',
+        'not null' => TRUE,
+       	'serialize' => TRUE,
+      ),      
+      
+    ),
+    'primary key' => array('id'),
+	'unique keys' => array(
+		'name'     => array('name'),
+    ),    
+  );
+
+  return $schema;
+}
+
+function cck_formatter_view_update_6002() {
+  $ret = array();
+  if (!db_column_exists('cck_formatter_views_formatters', 'options')) {
+    db_add_field($ret, 'cck_formatter_views_formatters', 'options', array(
+    																	'description' => t('Additional options'),
+    																	'type' => 'text',
+    																	'size' => 'medium',
+    																	'not null' => TRUE,
+    																	'serialize' => TRUE));
+  }
+  return $ret;
+}
+
+/**
+ * Implementation of hook_install().
+ */
+function cck_formatter_view_install() {
+  drupal_install_schema('cck_formatter_view');
+}

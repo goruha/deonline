@@ -1,0 +1,6 @@
+name = Content formatter view UI
+description = Enable admin ui for Content formatter view.
+package = CCK
+dependencies[] = cck_formatter_view
+core = 6.x
+

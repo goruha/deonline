@@ -6,6 +6,8 @@ core = 6.x
 engine = phptemplate
 
 stylesheets[all][] = css/custom.css
+stylesheets[all][] = css/grid16-inner-960.css
+
 
 scripts[] = js/jquery.equalheights.js
 

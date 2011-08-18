@@ -1,0 +1,6 @@
+name = Skype
+description = Defines skype field types.
+dependencies[] = text
+dependencies[] = skype_status
+package = CCK
+core = 6.x

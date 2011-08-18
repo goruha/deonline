@@ -108,3 +108,20 @@ div.view-program-types div.inner div.view-content {
   font-weight: bold;
   padding: 4px;
 }
+
+.right {
+  float: right;
+}
+
+.node-type-program-types .view-node-program-type-teacher .views-field-field-profile-avatar-fid  img {
+  padding: 0 7px;
+}
+
+.node-type-program-types .view-node-program-type-teacher .views-field-uid {
+  text-align: center;
+}
+
+.node-type-program-types .view-node-program-type-teacher td {
+  display: inline-block;
+  width: 150px;
+}

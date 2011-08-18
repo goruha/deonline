@@ -1,0 +1,7 @@
+name = Content formatter view
+description = Use views as content formatters.
+package = CCK
+dependencies[] = content
+dependencies[] = views
+core = 6.x
+

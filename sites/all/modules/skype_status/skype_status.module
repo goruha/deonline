@@ -76,9 +76,13 @@ function skype_status_theme() {
 function theme_skype_status($name, $buttonstyle, $status) {
   $ename = rawurlencode($name);
   $alt = t('Skype Status for @name', array('@name' => $name));
-  $path = base_path() . drupal_get_path('module', 'skype_status') . '/images/' . $buttonstyle . '/'. $status['num'] . '.png';
+  $path = base_path() . drupal_get_path('module', 'skype_status') . '/images/' . $buttonstyle . '/'. (int)$status['num'] . '.png';
   $text = (in_array($buttonstyle, array('mediumicon', 'smallicon'))) ? '&nbsp;' . $status['text'] : '';
-  return '<a href="skype:' . $name . '?call"><img src="' . $path . '" style="border: none;" alt="' . $alt . '" />' . $text . '</a>';
+  $image = '<img src="' . $path . '" style="border: none;" alt="' . $alt . '" />';
+  if ($status['num'] == 0 || $status['num'] == 1) {
+    return $image;
+  }
+  return '<a href="skype:' . $name . '?call">' . $image . $text . '</a>';
 }
 
 function skype_status_views_api() {
@@ -87,3 +91,4 @@ function skype_status_views_api() {
     'path' => drupal_get_path('module', 'skype_status') . '/views',
   );
 }
+

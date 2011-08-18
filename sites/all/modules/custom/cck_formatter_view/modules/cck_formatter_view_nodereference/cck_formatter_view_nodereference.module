@@ -1,0 +1,20 @@
+<?php
+/**
+ * Inplementationh hook_cck_formatter_views_info
+ * @return array()
+ */
+function cck_formatter_view_nodereference_cck_formatter_views_info() {
+  return array(
+    'nodereference_hanler' => array(
+      'handler' => 'cck_formatter_view_nodereference_handler',
+      'types' => array('nodereference'),
+      'multiple' => TRUE,
+    ),
+  );
+}
+
+
+function cck_formatter_view_nodereference_handler($item) {
+  return $item['#item']['nid'];
+}
+

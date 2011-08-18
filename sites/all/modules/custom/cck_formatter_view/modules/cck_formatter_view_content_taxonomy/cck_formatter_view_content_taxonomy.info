@@ -1,0 +1,7 @@
+name = Content formatter view content taxonomy handler
+description = Add content taxonomy handler for formatter views.
+package = CCK
+dependencies[] = content_taxonomy
+dependencies[] = cck_formatter_view
+core = 6.x
+

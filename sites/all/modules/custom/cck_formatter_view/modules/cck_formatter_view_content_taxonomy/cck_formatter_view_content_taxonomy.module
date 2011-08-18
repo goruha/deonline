@@ -1,0 +1,19 @@
+<?php
+/**
+ * Inplementationh hook_cck_formatter_views_info
+ * @return array()
+ */
+function cck_formatter_view_content_taxonomy_cck_formatter_views_info() {
+  return array(
+    'content_taxonomy_hanler' => array(
+      'handler' => 'cck_formatter_view_content_taxonomy_handler',
+      'types' => array('content_taxonomy'),
+      'multiple' => TRUE,
+    ),
+  );
+}
+
+
+function cck_formatter_view_content_taxonomy_handler($item) {
+  return $item['#item']['value'];  
+}

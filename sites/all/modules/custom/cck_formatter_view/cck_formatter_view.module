@@ -1,0 +1,148 @@
+<?php
+
+define('CCK_FORMATTER_VIEW_SINGLE', 0);
+define('CCK_FORMATTER_VIEW_MULTIPLE', 1);
+
+/**
+ * Implementation of hook_field_formatter_info().
+ */
+function cck_formatter_view_field_formatter_info() {
+  $result = array();
+  $formatters = cck_formatter_view_load_all();
+  foreach ($formatters as $formatter) {
+    $result["cck_formatter_view_$formatter->id"] = array(
+      'label' => $formatter->label,
+      'field types' => $formatter->field_types,
+      'multiple values' => ($formatter->type == CCK_FORMATTER_VIEW_MULTIPLE) ? CONTENT_HANDLE_MODULE : CONTENT_HANDLE_CORE,
+    );
+  }
+  return $result;
+}
+
+
+/**
+ * Implementation of hook_theme().
+ */
+function cck_formatter_view_theme() {
+  $result = array();  
+  $result["cck_formatter_view"] = array(
+	'arguments' => array('element' => NULL),
+    'file' => 'theme.inc',
+  );
+  $formatters = cck_formatter_view_load_all();
+  foreach ($formatters as $formatter) {
+    $result["cck_formatter_view_formatter_cck_formatter_view_$formatter->id"] = array(
+    	'arguments' => array('element' => NULL),
+    	'file' => 'theme.inc',
+        'function' => 'theme_cck_formatter_view',
+    );
+  }
+  return $result;
+}
+
+function cck_formatter_view_types($with_names = FALSE) {
+  $result = array();
+  $result[CCK_FORMATTER_VIEW_SINGLE] = $with_names ? t('Simple formatter') : CCK_FORMATTER_VIEW_SINGLE;
+  $result[CCK_FORMATTER_VIEW_MULTIPLE] = $with_names ? t('Multiple formatter') : CCK_FORMATTER_VIEW_MULTIPLE;
+  return $result;
+}
+
+function cck_formatter_view_avaliable_fields_types($type = CCK_FORMATTER_VIEW_SINGLE, $with_names = FALSE) {
+  module_load_include('inc', 'content', 'includes/content.admin');
+  $field_types = content_field_type_options();
+  $result = array();
+  foreach ($field_types as $type_id => $name) {
+    if (_cck_formatter_view_types_is_avaliable($type, $type_id)) {
+      $result[$type_id] = $name;
+    }
+  }
+  return $result;
+}
+
+function cck_formatter_view_get_fields_handlers() {
+  $handlers = array();
+  foreach (module_implements('cck_formatter_views_info') as $module) {
+    if ($formatters_handlers = module_invoke($module, 'cck_formatter_views_info')) {
+      foreach ($formatters_handlers as $name => $handler_info) {
+        $handlers[$name] = $handler_info;
+      }
+    }
+  }
+  return $handlers;
+}
+
+function cck_formatter_view_get_field_handler($type) {
+  static $cache  = array();
+  if (empty($cache)) {
+    $handlers = cck_formatter_view_get_fields_handlers();
+    foreach ($handlers as $handler) {
+      foreach ($handler['types'] as $type) {
+        if (!isset($cache[$type])) {
+          $cache[$type] = $handler['handler'];           
+        }
+      }
+    }
+  }
+  return $cache[$type];
+}
+
+function _cck_formatter_view_types_is_avaliable($type, $field_type) {
+  $handlers = cck_formatter_view_get_fields_handlers();
+  foreach ($handlers as $info) {
+    if (in_array($field_type, $info['types'])) {
+      if ($type == CCK_FORMATTER_VIEW_MULTIPLE) {
+        if ($info['multiple']) {
+          return TRUE;
+        }
+      } else {
+        return TRUE;
+      }
+    }
+  }
+  return FALSE;
+}
+
+function cck_formatter_view_load($id) {
+  static $cache = array();
+  if (!isset($cache[$id])) { 
+    $sql = "SELECT * FROM {cck_formatter_views_formatters} WHERE id = %d";
+    $formatter = db_fetch_object(db_query($sql, $id));
+    _cck_formatter_view_post_load($formatter);
+    $cache[$id] = $formatter; 
+  }
+  return $cache[$id];
+}
+
+function cck_formatter_view_delete($id) {
+  $sql = "DELETE FROM {cck_formatter_views_formatters} WHERE id = %d";
+  db_query($sql, $id);
+}
+
+
+function _cck_formatter_view_post_load(&$formatter) {
+  $formatter->field_types = unserialize($formatter->field_types);
+  $formatter->options = unserialize($formatter->options);
+}
+
+function cck_formatter_view_save($formatter) {
+  $update = (0 != $formatter->id) ? 'id' : array();
+  if (drupal_write_record('cck_formatter_views_formatters', $formatter, $update)) {
+    return $formatter;
+  }
+  return NULL;
+}
+
+function cck_formatter_view_load_all() {
+  static $cache  = array();
+  if (empty($cache)) {
+    $sql = "SELECT * FROM {cck_formatter_views_formatters}";
+    $result = db_query($sql);
+    $list = array();
+    while ($formatter = db_fetch_object($result)) {
+      _cck_formatter_view_post_load($formatter);
+      $list[] = $formatter;
+    }
+    $cache = $list;
+  }
+  return $cache;
+}

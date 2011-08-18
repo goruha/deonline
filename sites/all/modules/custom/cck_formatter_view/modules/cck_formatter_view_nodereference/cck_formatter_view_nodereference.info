@@ -1,0 +1,7 @@
+name = Content formatter view node reference handler
+description = Add node reference handler for formatter views.
+package = CCK
+dependencies[] = nodereference
+dependencies[] = cck_formatter_view
+core = 6.x
+

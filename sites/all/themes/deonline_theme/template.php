@@ -48,3 +48,14 @@ function deonline_theme_preprocess_page(&$vars) {
 
 }
 
+/**
+ * Override or insert PHPTemplate variables into the templates.
+ */
+function deonline_theme_preprocess_node(&$vars) {
+  $template = array();
+  $template[] = 'node';
+  $template[] = $vars['type'];
+  $template[] = $vars['page'] ? 'full' : 'teaser';
+  $vars['template_files'][] = implode('-', $template);
+}
+

@@ -1,0 +1,39 @@
+/* Layout - 16 column grid, 960px fixed width, 20px gutters
+-------------------------------------------------------------- */
+
+/* grid widths */
+.grid16-inner-1 {width: 45px;}
+.grid16-inner-2 {width: 105px;}
+.grid16-inner-3 {width: 165px;}
+.grid16-inner-4 {width: 225px;}
+.grid16-inner-5 {width: 285px;}
+.grid16-inner-6 {width: 345px;}
+.grid16-inner-7 {width: 405px;}
+.grid16-inner-8 {width: 465px;}
+.grid16-inner-9 {width: 525px;}
+.grid16-inner-10 {width: 585px;}
+.grid16-inner-11 {width: 645px;}
+.grid16-inner-12 {width: 705px;}
+.grid16-inner-13 {width: 765px;}
+.grid16-inner-14 {width: 825px;}
+.grid16-inner-15 {width: 885px;}
+.grid16-inner-16 {width: 945px;}
+
+/*
+.grid16-indent-1 {margin-left: 60px;}
+.grid16-indent-2 {margin-left: 120px;}
+.grid16-indent-3 {margin-left: 180px;}
+.grid16-indent-4 {margin-left: 240px;}
+.grid16-indent-5 {margin-left: 300px;}
+.grid16-indent-6 {margin-left: 360px;}
+.grid16-indent-7 {margin-left: 420px;}
+.grid16-indent-8 {margin-left: 480px;}
+.grid16-indent-9 {margin-left: 540px;}
+.grid16-indent-10 {margin-left: 600px;}
+.grid16-indent-11 {margin-left: 660px;}
+.grid16-indent-12 {margin-left: 720px;}
+.grid16-indent-13 {margin-left: 780px;}
+.grid16-indent-14 {margin-left: 840px;}
+.grid16-indent-15 {margin-left: 900px;}
+
+*/

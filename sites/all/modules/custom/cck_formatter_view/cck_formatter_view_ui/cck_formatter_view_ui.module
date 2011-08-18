@@ -1,0 +1,73 @@
+<?php
+
+function cck_formatter_view_ui_menu() {
+  $items = array();
+  
+  $items['admin/content/formatters/views'] = array(
+    'title' => 'Formatters',
+    'description' => "View, edit, and delete formatters.",
+    'page callback' => 'cck_formatter_view_ui_list',
+    'access arguments' => array('administer formatters'),
+    'file' => 'cck_formatter_view_ui.admin.inc',
+    'type' => MENU_NORMAL_ITEM
+  );
+  
+  $items['admin/content/formatters/views/list'] = array(
+    'title' => 'List',
+    'description' => "View, edit, and delete formatters.",
+    'page callback' => 'cck_formatter_view_ui_list',
+    'access arguments' => array('administer formatters'),
+    'file' => 'cck_formatter_view_ui.admin.inc',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -1,
+  );
+  
+  $items['admin/content/formatters/views/add/%'] = array(
+    'title' => 'Add formatter',
+    'description' => "Add formatter.",
+    'page callback' => 'cck_formatter_view_ui_add',
+  	'page arguments' => array(5),
+    'access arguments' => array('administer formatters'),
+    'file' => 'cck_formatter_view_ui.admin.inc',
+    'type' => MENU_CALLBACK,
+  );
+  
+  $items['admin/content/formatters/views/edit/%'] = array(
+    'title' => 'Edit formatter',
+    'description' => "Edit formatter.",
+    'page callback' => 'cck_formatter_view_ui_edit',
+  	'page arguments' => array(5),
+    'access arguments' => array('administer formatters'),
+    'file' => 'cck_formatter_view_ui.admin.inc',
+    'type' => MENU_CALLBACK,
+  );
+
+  $items['admin/content/formatters/views/delete/%'] = array(
+    'title' => 'Delete formatter',
+    'description' => "Delete formatter.",
+    'page callback' => 'drupal_get_form',
+  	'page arguments' => array('cck_formatter_view_ui_delete', 5),
+    'access arguments' => array('administer formatters'),
+    'file' => 'cck_formatter_view_ui.admin.inc',
+    'type' => MENU_CALLBACK,
+  );    
+  
+  foreach(cck_formatter_view_types($with_names = TRUE) as $type => $name) {
+    $items["admin/content/formatters/views/add/$type"] = array(
+    	'title' => "Add $name",
+    	'description' => "Add $name",
+    	'page callback' => 'cck_formatter_view_ui_add',
+  		'page arguments' => array(5),
+        'access arguments' => array('administer formatters'),
+    	'file' => 'cck_formatter_view_ui.admin.inc',
+    	'type' => MENU_LOCAL_TASK,
+        'weight' => $i++,
+    );    
+  } 
+  
+  return $items;
+}
+
+function cck_formatter_view_perm() {
+  return array('administer formatters');
+} 
