@@ -1,0 +1,229 @@
+<?php
+
+// $Id: qq_import.module,v 1.1 2010/09/26 11:04:47 sivaji Exp $
+
+/**
+ * @file
+ * Quiz Questions Import module file.
+ *
+ */
+
+// This modules allows user with permission 'import quiz questions'
+// to create a bulk of questions from CSV file.
+
+// For sample import files see 'examples' directory
+
+/**
+ * @function
+ * Implementation of hook_menu().
+ */
+function qq_import_menu() {
+  return array(
+    'admin/quiz/qq_import' => array(
+      'title' => 'Import Quiz Questions',
+      'description' => 'Allows to create bulk of questions from CSV file.',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('qq_import_form'),
+      'access arguments' => array('import quiz questions'),
+      'type' => MENU_NORMAL_ITEM,
+    ),
+  );
+}
+
+/**
+ * Implementation of hook_perm().
+ */
+function qq_import_perm() {
+  return array('import quiz questions');
+}
+
+/**
+ * Returns allowed import question types.
+ *
+ * @return Array
+ *   An associative array containing machine name of question type as index
+ *   and human name as value.
+ */
+function _qq_import_questions_types() {
+  $modules = module_list();
+  $import_types = array(
+    'long_answer' => t('Long Answer'),
+    'matching' => t('Matching'),
+    'multichoice' => t('Multi-Choice'),
+    'short_answer' => t('Short Answer'),
+    'truefalse' => ('True/False'),
+  );
+  $types = array();
+  foreach ($import_types as $machine_name => $human_name) {
+    if (in_array($machine_name, $modules)) {
+      $types[$machine_name] = $human_name;
+    }
+  }
+  return $types;
+}
+
+/**
+ * Form builder function, provides questions import UI.
+ */
+function qq_import_form() {
+  $form = array();
+  $form['#attributes'] = array('enctype' => 'multipart/form-data');
+  $form['qq_import'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Import questions'),
+    '#description' => t('In this page you can add a bulk of quiz question from CSV file.'),
+  );
+  $question_type_options = _qq_import_questions_types();
+  if (empty($question_type_options)) {
+    drupal_set_message(t('You need to enable at least one question type module.'), 'error');
+  }
+  $form['qq_import']['question_type'] = array(
+    '#type' => 'select',
+    '#title' => t('Question type'),
+    '#options' => $question_type_options,
+    '#description' => t('Select the question type. At a time you can import only one type of question.'),
+    '#required' => TRUE,
+  );
+  $form['qq_import']['question_file'] = array(
+    '#type' => 'file',
+    '#title' => t('Upload'),
+    '#size' => 30,
+    '#description' => t('Upload the file that has quiz questions. <strong>The import CSV file must have questions as in example folder (@path) </strong>.', array('@path' => drupal_get_path('module', 'qq_import') . '/example/')),
+  );
+  $form['qq_import']['is_header'] = array(
+    '#title' => t('First line is header'),
+    '#type' => 'checkbox',
+    '#default_value' => 1,
+    '#description' => t('Check this box if your input file\'s first line is header and need to be ignored when importing questions'),
+  );
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Import'),
+  );
+  return $form;
+}
+
+/**
+ * Validation handler for qq_import_form().
+ */
+function qq_import_form_validate($form, &$form_state) {
+  $file = file_save_upload('question_file');
+  if (!$file) {
+    form_set_error('upload', 'You must select a valid file to upload.');
+  }
+  else {
+    $type = $form_state['values']['question_type'];
+    $ignore_line = $form_state['values']['is_header'];
+    $line_no = 1;
+    if (($handle = fopen($file->destination, 'r')) !== FALSE) {
+      while (($line = fgetcsv($handle, 1000, ',')) !== FALSE) {
+        $line_no++;
+        if ($ignore_line) {
+          $ignore_line = FALSE;
+          continue;
+        }
+
+        if ($type == 'truefalse') {
+          if (count($line) != 2 || !in_array($line[1], array('T', 't', 'F', 'f'))) {
+            form_set_error('question_file', t('Error in input file around line number @line_no. True false type question requires a title and an answer (T or F).', array('@line_no' => $line_no)));
+          }
+        }
+
+        elseif ($type == 'matching') {
+          if (count($line) < 5) {
+            form_set_error('question_file', t('Error in input file around line number @line_no. Matching type question requires a title and at least two matches.', array('@line_no' => $line_no)));
+          }
+        }
+
+        elseif ($type == 'long_answer') {
+          if (count($line) != 2) {
+            form_set_error('question_file', t('Error in input file around line number @line_no. Long answer type question requires a title and answer field.', array('@line_no' => $line_no)));
+          }
+        }
+      }
+      fclose($handle);
+    }
+    $form_state['values']['validated_file'] = $file;
+  }
+}
+
+/**
+ * Submit handler for qq_import_form().
+ */
+function qq_import_form_submit($form, &$form_state) {
+  global $user;
+  $type = $form_state['values']['question_type'];
+  $file = $form_state['values']['validated_file'];
+  $ignore_line = $form_state['values']['is_header'];
+  $line_no = 0;
+
+  if ($file && ($handle = fopen($file->destination, 'r')) !== FALSE) {
+    while (($line = fgetcsv($handle, 1000, ',')) !== FALSE) {
+      if ($ignore_line) {
+        $ignore_line = FALSE;
+        continue;
+      }
+      $question = trim(array_shift($line));
+      // create node object
+      $node = new stdClass();
+      $node->uid = $user->uid;
+      $node->name = $user->name;
+      $node->title = (drupal_strlen($question) > 100) ? drupal_substr($question, 0, 100) . '...' : $question;
+      $node->status = 1;
+      $node->body = $node->teaser = $question;
+      $node->is_quiz_question = 1;
+
+
+      if ($type == 'truefalse') {
+        $node->type = 'truefalse';
+        $node->max_score = 1;
+        $answer = trim(array_shift($line));
+        $node->correct_answer = in_array($answer, array('T', 't')) ? 1 : 0;
+      }
+
+      elseif ($type == 'matching') {
+        $node->type = 'matching';
+        $node->max_score = count($line) - 1;
+        $match = array();
+        while (!empty($line)) {
+          $match[] = array(
+            'question' => array_shift($line),
+            'answer' => array_shift($line),
+          );
+        }
+        $node->match = $match;
+      }
+
+      elseif ($type == 'long_answer') {
+        $node->type = 'long_answer';
+        $node->max_score = 10;
+        $node->rubric = array_shift($line);
+      }
+
+      elseif ($type == 'short_answer') {
+        $node->type = 'short_answer';
+        $node->max_score = 5;
+        $node->correct_answer = trim(array_shift($line));
+        $node->correct_answer_evaluation = array_shift($line);
+      }
+
+      elseif ($type == 'multichoice') {
+        $node->type = 'multichoice';
+        $node->max_score = 1;
+        $alternatives = array();
+        $correct_choices = array_pop($line);
+        while (!empty($line)) {
+          $alternatives[] = array('answer' => array_shift($line));
+        }
+        foreach (explode(',', $correct_choices) as $choice) {
+          $alternatives[$choice - 1]['score_if_chosen'] = 1;
+        }
+        $node->alternatives = $alternatives;
+      }
+      node_save($node);
+      $line_no++;
+    }
+    drupal_set_message(t('@count questions imported successfully.', array('@count' => $line_no)));
+    fclose($handle);
+  }
+}

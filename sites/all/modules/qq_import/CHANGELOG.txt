@@ -1,0 +1,5 @@
+// $Id: CHANGELOG.txt,v 1.1 2010/09/26 11:04:47 sivaji Exp $
+
+Quiz Questions Import 6.x-1.0, 2010-9-26
+------------------------------
+Initial release of qq_import module, supporting Drupal 6.x.

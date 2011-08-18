@@ -1,0 +1,14 @@
+; $Id: qq_import.info,v 1.1 2010/09/26 11:04:47 sivaji Exp $
+name = Quiz Question Import (CSV only)
+description = An optional module for quiz to import a bulk of questions.
+package = Quiz Addon
+version = VERSION
+core = 6.x
+dependencies[] = quiz
+
+; Information added by drupal.org packaging script on 2011-02-20
+version = "6.x-1.0"
+core = "6.x"
+project = "qq_import"
+datestamp = "1298203019"
+
