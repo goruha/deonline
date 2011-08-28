@@ -1,0 +1,3 @@
+<?php
+
+include_once('features_deonline_imagecache.features.inc');
