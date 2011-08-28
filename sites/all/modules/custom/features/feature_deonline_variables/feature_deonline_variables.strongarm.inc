@@ -959,13 +959,6 @@ function feature_deonline_variables_strongarm() {
   $strongarm = new stdClass;
   $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
   $strongarm->api_version = 1;
-  $strongarm->name = 'drupal_private_key';
-  $strongarm->value = '77ca5abd7d10bd53ac59470dd37ff50e7ffda3cdc14ea96cd0bcea77c414ecb0';
-  $export['drupal_private_key'] = $strongarm;
-
-  $strongarm = new stdClass;
-  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
-  $strongarm->api_version = 1;
   $strongarm->name = 'features_ignored_orphans';
   $strongarm->value = array();
   $export['features_ignored_orphans'] = $strongarm;
