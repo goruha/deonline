@@ -1,0 +1,10 @@
+name = Multistep Nodeform
+description = Create a multistep node form.
+core = 6.x
+
+; Information added by drupal.org packaging script on 2011-08-19
+version = "6.x-1.2"
+core = "6.x"
+project = "msnf"
+datestamp = "1313759220"
+

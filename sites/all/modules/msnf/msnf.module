@@ -1,0 +1,846 @@
+<?php
+
+/**
+ * @file
+ * Main functions for module "Multistep Nodeform".
+ */
+
+/**
+ * Implementation of hook_help().
+ */
+function msnf_help($path, $arg) {
+  switch ($path) {
+    case 'admin/help#msnf':
+      $output = '<p>' . t('The "Multistep Nodeform" module allows administrators create single steps for node adding and editing and to associate fields with these steps. This includes default fields as "Title" or "Body", as well as custom fields defined by the @cck.', array('@cck' => 'http://drupal.org/project/cck')) . '</p>';
+      return $output;
+  }
+}
+
+/**
+ * Implementation of hook_menu().
+ *
+ * @return An array of menu items.
+ */
+function msnf_menu() {
+  $items = array();
+
+  foreach (node_get_types() as $type) {
+    $type_name = $type->type;
+    $content_type = msnf_content_types($type_name);
+    $type_url_str = $content_type['url_str'];
+    $items['admin/content/node-type/' . $type_url_str . '/steps'] = array(
+      'title' => 'Manage steps',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('msnf_step_overview_form', $type_name),
+      'access arguments' => array('administer content types'),
+      'file' => 'includes/msnf.admin.inc',
+      'type' => MENU_LOCAL_TASK,
+      'weight' => 3,
+    );
+    $items['admin/content/node-type/'. $type_url_str .'/steps/%'] = array(
+      'title' => 'Edit step',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('msnf_step_edit_form', $type_name, 5),
+      'access arguments' => array('administer content types'),
+      'file' => 'includes/msnf.admin.inc',
+      'type' => MENU_CALLBACK,
+    );
+    $items['admin/content/node-type/'. $type_url_str .'/steps/%/remove'] = array(
+      'title' => 'Remove step',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('msnf_step_remove_step', $type_name, 5),
+      'access arguments' => array('administer content types'),
+      'file' => 'includes/msnf.admin.inc',
+      'type' => MENU_CALLBACK,
+    );
+  }
+
+  return $items;
+}
+
+/**
+ * Implementation of hook_theme().
+ * 
+ * @see theme/theme.inc.
+ */
+function msnf_theme($existing, $type, $theme, $path) {
+  $path = drupal_get_path('module', 'msnf') . '/theme';
+  require_once "./$path/theme.inc";
+
+  return array(
+    'msnf_step_overview_form' => array(
+      'template' => 'msnf-admin-step-overview-form',
+      'file' => 'theme.inc',
+      'path' => $path,
+      'arguments' => array('form' => NULL),
+    ),
+  );
+}
+
+/**
+ * Implementation of hook_form_alter().
+ */
+function msnf_form_alter(&$form, $form_state, $form_id) {
+  if (isset($form['type']) && isset($form['#node']) && $form_id == "{$form['type']['#value']}_node_form") {
+    // [node/add], [node/%nid/edit]
+    msnf_prepare_form_step($form, $form_state, $form_id);
+  }
+  elseif ($form_id == 'content_field_remove_form') {
+    $form['#submit'][] = 'msnf_field_remove_form_submit';
+  }
+  elseif ($form_id == 'node_type_form') {
+    msnf_alter_node_type_form($form, $form_state);
+  }
+}
+
+/**
+ * Function to prepare the current form step and to alter the node form.
+ */
+function msnf_prepare_form_step(&$form, &$form_state, $form_id) {
+  // Init first step if no step is set before.
+  if (!$form_state['storage']['step']) {
+    $form_state['storage']['step'] = 1;
+  }
+
+  // Add handler to restore the form state with previous entered values.
+  $form['#after_build'][] = '_msnf_restore_form_state';
+
+  // Add custom form buttons.
+  _msnf_form_add_buttons($form, $form_state);
+
+  // Rearrange and hide form elements.
+  _msnf_hide_fields($form, $form_state);
+
+  // Restore form values.
+  _msnf_restore_values($form, $form_state);
+
+  // Add a custom validation handler to rebuild the form.
+  $form['#validate'][] = '_msnf_form_validate';
+
+  // Add handler to modify weights before rendering the form.
+  $form['#pre_render'][] = 'msnf_alter_extra_weights';
+
+  // Add step title and description.
+  _msnf_step_add_information($form, $form_state);
+
+  // Add custom submit handler to clean-up the values for other handlers.
+  $form['#submit'][] = '_msnf_form_submit';
+}
+
+/**
+ * Pre-render callback to adjust weights of non-CCK fields.
+ */
+function msnf_alter_extra_weights($elements) {
+  if (module_exists('content')) {
+    // Use content.module's function if its installed.
+    return content_alter_extra_weights($elements);
+  }
+  if (!isset($elements['type']['#value'])) {
+    return $elements;
+  }
+  $weights = variable_get('content_extra_weights_' . $elements['type']['#value'], array());
+  foreach ($weights as $field_name => $weight) {
+    if (isset($elements[$field_name])) {
+      $elements[$field_name]['#weight'] = $weight;
+    }
+  }
+  return $elements;
+}
+
+/**
+ * Function to add options to the node type form.
+ */
+function msnf_alter_node_type_form(&$form, &$form_state) {
+  $default_settings = array(
+    'skip_non_required' => TRUE,
+    'button_label_skip' => t('Skip next step'),
+  );
+  $msnf_settings = variable_get("msnf_settings_{$form['#node_type']->type}", array());
+  $msnf_settings = array_merge($default_settings, $msnf_settings);
+  $form['msnf'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Multistep Nodeform settings'),
+    '#description' => t('These settings apply to each step in the node editing form.'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+    '#weight' => 40,
+    '#tree' => TRUE,
+  );
+  $form['msnf']['skip_non_required'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Skip non-required steps'),
+    '#default_value' => $msnf_settings['skip_non_required'],
+    '#description' => t('If a step contains non-required fields only, show a button to skip the step.'),
+    '#required' => FALSE,
+  );
+  $form['msnf']['button_label_skip'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Label for skip-button'),
+    '#default_value' => $msnf_settings['button_label_skip'],
+    '#description' => t('Text to use as label for skip-button. Leave empty to use "%skip_label_short" and the title of the next step (e.g. "%skip_label_example").', array('%skip_label_short' => t('Skip'), '%skip_label_example' => t('Skip') .' '. t('Additional information'))),
+    '#required' => FALSE,
+  );
+  // Add submit handler to save this settings.
+  $form['#submit'][] = '_msnf_node_type_form_submit';
+}
+
+/**
+ * Function to add step title and description to the node form.
+ */
+function _msnf_step_add_information(&$form, &$form_state) {
+  // Load necessary functions for form steps.
+  module_load_include('inc', 'msnf', 'includes/msnf.steps');
+
+  // Get node type and current step.
+  $type = $form['#node']->type;
+  $current_step = _msnf_form_step_get_current($form_state);
+  // Get a sorted list of all steps for this content type.
+  $steps = msnf_steps($type, TRUE);
+  if (count($steps) == 0) {
+    // No steps defined.
+    return;
+  }
+  if (!isset($steps[$current_step - 1])) {
+    drupal_set_message(t('Invalid step index "%current_step".', array('%current_step' => $current_step)), 'error');
+    return;
+  }
+
+  // Current step.
+  $step = $steps[$current_step - 1];
+
+  // Add step title and description.
+  $form['step_title'] = array(
+    '#type' => 'item',
+    '#value' => $step['label'],
+    '#description' => $step['settings']['form']['description'],
+    '#weight' => -100,
+    '#prefix' => '<div class="step-title">',
+    '#suffix' => '</div>',
+  );
+}
+
+/**
+ * Restores all values for $form_state. This is needed for validation functions
+ * to work correct.
+ */
+function _msnf_restore_form_state($form, &$form_state) {
+  if (!$form_state['process_input']) {
+    if (empty($form_state['storage']['values'])) {
+      $form_state['storage']['values'] = $form_state['values'];
+    }
+    else {
+      // Merge current values from $form_state with values saved in former steps.
+      $form_state['storage']['values'] = array_merge($form_state['storage']['values'], $form_state['values']);
+    }
+    unset($form_state['storage']['values']['form_build_id']);
+
+    // Restore values for submit-functions at every step before the form values 
+    // are validated.
+    if (($form_state['storage']['step'] > 0 || $form_state['rebuild'] == TRUE) && isset($form_state['storage']['values'])) {
+      $form_state['values'] = array_merge($form_state['values'], $form_state['storage']['values']);
+    }
+  }
+  return $form;
+}
+
+/**
+ * Custom validation handler for node form.
+ * 
+ * Used to decide whether the values should be saved to databases or saved for
+ * another step.
+ */
+function _msnf_form_validate($form, &$form_state) {
+  // Restore values for submit-functions at every step.
+  $type = $form_state['values']['type'];
+
+  if ($form_state['clicked_button']['#name'] == 'done') {
+    $form_state['rebuild'] = NULL;
+    $form_state['redirect'] = NULL;
+  }
+  else {
+    // Store values to restore them at last step.
+    if ($form_state['clicked_button']['#name'] == 'next' 
+      || $form_state['clicked_button']['#name'] == 'skip'
+      || $form_state['clicked_button']['#name'] == 'previous') {
+      if (empty($form_state['storage']['values'])) {
+        $form_state['storage']['values'] = $form_state['values'];
+      }
+      else {
+        $form_state['storage']['values'] = array_merge($form_state['storage']['values'], $form_state['values']);
+      }
+      unset($form_state['storage']['values']['form_build_id']);
+    }
+
+    // Run buttons validators.
+    if ($form_state['clicked_button']['#name'] == 'next' 
+      || $form_state['clicked_button']['#name'] == 'skip'
+      || $form_state['clicked_button']['#name'] == 'previous') {
+      // This is not the last step so rebuild the form.
+      $form_state['rebuild'] = TRUE;
+      $form_state['redirect'] = FALSE;
+      if ($form_state['clicked_button']['#name'] == 'next') {
+        $form_state['storage']['step']++;
+      }
+      elseif ($form_state['clicked_button']['#name'] == 'skip') {
+        $form_state['storage']['step'] += 2;
+      }
+      elseif ($form_state['clicked_button']['#name'] == 'previous') {
+        $form_state['storage']['step']--;
+      }
+    }
+  }
+}
+
+/**
+ * Custom submit handler for node form.
+ * 
+ * Block node creation until we are on the last step.
+ */
+function _msnf_form_submit($form, &$form_state) {
+  // Load necessary functions for form steps.
+  module_load_include('inc', 'msnf', 'includes/msnf.steps');
+
+  // Get node type and current step.
+  $type = $form_state['values']['type'];
+  $current_step = _msnf_form_step_get_current($form_state) - 1;
+  // Get a sorted list of all steps for this content type.
+  $steps = msnf_steps($type, TRUE);
+  if (count($steps) == 0) {
+    // No steps defined.
+    return;
+  }
+  if (!isset($steps[$current_step])) {
+    drupal_set_message(t('Invalid step index "%current_step".', array('%current_step' => $current_step)), 'error');
+    return;
+  }
+
+  // Current step.
+  $step = $steps[$current_step];
+
+  // Is this the last available step?
+  if ($form_state['storage']['step'] == count($steps)) {
+    // Clear storage to avoid automatic form rebuild.
+    $form_state['storage'] = NULL;
+    // Prevent double submitting node (we are last submit callback).
+    unset($form['#submit']);
+    // Create a node.
+    node_form_submit($form, $form_state);
+  }
+}
+
+/**
+ * Custom submit handler for the node type form.
+ */
+function _msnf_node_type_form_submit($form, &$form_state) {
+  if (isset($form_state['values']['msnf'])) {
+    $settings = $form_state['values']['msnf'];
+    $node_type = $form_state['values']['type'];
+    variable_set("msnf_settings_{$node_type}", $settings);
+  }
+}
+
+/**
+ * Restore node fields which has a tree-like structure of data..
+ */
+function _msnf_restore_values(&$form, &$form_state) {
+  $values = $form_state['values'];
+  foreach ($form as $key => &$parent) {
+    if (is_array($parent)) {
+      if (!empty($parent['#type'])) {
+        if ((!empty($parent['#tree']) && $parent['#tree'])) {
+          $value = $form_state['values'][$key];
+        }
+        else {
+          $value = $form_state['values'];
+        }
+        _msnf_restore_values_recursive($key, $parent, $value);
+      }
+      elseif (!empty($parent['body'])) {
+        // Handle body field.
+        $body_fields = array('body', 'teaser_js', 'teaser_include', 'format');
+        foreach ($body_fields as $body_field) {
+          $value = $values[$body_field];
+          if (!empty($value) || $body_field == 'teaser_include') {
+            $parent[$body_field]['#default_value'] = $valudpe;
+          }
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Helper function to restore values recursive.
+ */
+function _msnf_restore_values_recursive($key, &$parent, $values) {
+  // Fields inside fieldsets.
+  foreach ($parent as $k => &$child) {
+    if (is_array($child) && isset($child['#type'])) {
+      if (isset($child['#tree']) && $child['#tree'] == TRUE) {
+        $value = $values[$k];
+      }
+      else {
+        if (isset($values[$k])) {
+          $parent[$k]['#default_value'] = $values[$k];
+        }
+        return;
+      }
+      _msnf_restore_values_recursive($k, $child, $value);
+    }
+  }
+  // Single fields as "title".
+  if (isset($values[$key])) {
+    $parent['#default_value'] = $values[$key];
+  }
+}
+
+/**
+ * Adds buttons to the form depending on the current step.
+ */
+function _msnf_form_add_buttons(&$form, $form_state) {
+  if (!is_array($form) || !is_array($form_state)) {
+    return;
+  }
+  // Load necessary functions for form steps.
+  module_load_include('inc', 'msnf', 'includes/msnf.steps');
+
+  // Get node type and current step.
+  $type = $form['#node']->type;
+  $current_step = _msnf_form_step_get_current($form_state);
+  // Get a sorted list of all steps for this content type.
+  $steps = msnf_steps($type, TRUE);
+  if (count($steps) == 0) {
+    // No steps defined.
+    return;
+  }
+  if (!isset($steps[$current_step - 1])) {
+    drupal_set_message(t('Invalid step index "%current_step".', array('%current_step' => $current_step)), 'error');
+    return;
+  }
+
+  $step = $steps[$current_step - 1];
+
+  // Default labels.
+  $buttons_labels_default = array(
+    'previous' => t('Previous'),
+    'next' => t('Next'),
+    'skip' => t('Skip next step'),
+    'done' => t('Save'),
+  );
+
+  // Get button labels from config.
+  // Step-specific settings.
+  $settings = $step['settings'];
+  // Type-specific settings.
+  $type_settings = variable_get("msnf_settings_{$type}", array());
+
+  if (strlen($settings['form']['button_label']['next']) == 0 && isset($steps[$current_step])) {
+    // Use title of next step as button label.
+    $settings['form']['button_label']['next'] = $steps[$current_step]['label'];
+  }
+  if (strlen($type_settings['button_label_skip']) == 0 && isset($steps[$current_step])) {
+    // Use a combination of <code>t('Skip')</code> and the title of next step as 
+    // button label.
+    $type_settings['button_label_skip'] = t('Skip !step_label', array('!step_label' => $steps[$current_step]['label']));
+  }
+  if (strlen($settings['form']['button_label']['previous']) == 0 && isset($steps[$current_step - 2])) {
+    // Use title of previous step as button label.
+    $settings['form']['button_label']['previous'] = $steps[$current_step - 2]['label'];
+  }
+  $button_labels = array_merge($buttons_labels_default, $settings['form']['button_label']);
+  $button_labels['skip'] = $type_settings['button_label_skip'];
+
+  $buttons = array();
+  // Add buttons based on current step and number of steps.
+  if ($current_step > 1) {
+    // There is at least one previous step.
+    $buttons[] = 'previous';
+  }
+  if ($current_step < count($steps)) {
+    // There is at least one more step.
+    $buttons[] = 'next';
+    // Is the next step optional (no required fields) and not the last step?
+    if ($type_settings['skip_non_required'] == TRUE && !msnf_step_has_required_fields($form, $steps[$current_step]) && ($current_step < count($steps) - 1)) {
+      $buttons[] = 'skip';
+    }
+  }
+  if ($current_step == count($steps)) {
+    // This is the last step.
+    $buttons[] = 'done';
+  }
+
+  $weight = 101;
+  if (!isset($form['buttons'])) {
+    $form['buttons'] = array();
+  }
+
+  foreach ($buttons as $name) {
+    $form['buttons'][$name] = array(
+      '#type' => 'submit',
+      '#value' => $button_labels[$name],
+      '#weight' => $weight,
+      '#name' => $name,
+    );
+    $weight++;
+  }
+
+  $form['buttons']['#prefix'] = '<div class="form-buttons">';
+  $form['buttons']['#suffix'] = '</div>';
+
+  // Remove preview button (if there is one).
+  unset($form['buttons']['preview']);
+  // Remove original submit button.
+  unset($form['buttons']['submit']);
+}
+
+/**
+ * Hide all fields that are not associated to the current step.
+ */
+function _msnf_hide_fields(&$form, $form_state) {
+  if (!is_array($form) || !is_array($form_state)) {
+    return;
+  }
+  // Load necessary functions for form steps.
+  module_load_include('inc', 'msnf', 'includes/msnf.steps');
+
+  // Get node type and current step.
+  $type = $form['#node']->type;
+  $current_step = _msnf_form_step_get_current($form_state) - 1;
+  // Get a sorted list of all steps for this content type.
+  $steps = msnf_steps($type, TRUE);
+  if (count($steps) == 0) {
+    // No steps defined.
+    return;
+  }
+  if (!isset($steps[$current_step])) {
+    drupal_set_message(t('Invalid step index "%current_step".', array('%current_step' => $current_step)), 'error');
+    return;
+  }
+
+  $step = $steps[$current_step];
+  $type_info = msnf_content_types($type);
+
+  // Remove non-CCK fields.
+  foreach ($type_info['extra'] as $field_name => $field) {
+    if (!isset($step['fields'][$field_name])) {
+      unset($form[$field_name]);
+    }
+  }
+  // Remove CCK fields (if there are some).
+  foreach ($type_info['fields'] as $field_name => $field) {
+    if (!isset($step['fields'][$field_name])) {
+      unset($form[$field_name]);
+    }
+  }
+  // Remove fieldgrouss (if there are some).
+  if (module_exists('fieldgroup')) {
+    foreach (fieldgroup_groups($type) as $group_name => $group) {
+      if (!isset($step['groups'][$group_name])) {
+        unset($form[$group_name]);
+      }
+    }
+  }
+}
+
+/**
+ * Returns the current form step from $form_state.
+ */
+function _msnf_form_step_get_current($form_state) {
+  if (!isset($form_state['storage'])) {
+    return 1;
+  }
+  if (isset($form_state['storage']['step'])) {
+    return $form_state['storage']['step'];
+  }
+  return 1;
+}
+
+/**
+ * Return a list of all content types.
+ *
+ * @param $content_type_name
+ *   If set, return information on just this type.
+ *
+ * If content.module is active, return its implementation of content_types().
+ * Otherwise build the information we need manually.
+ */
+function msnf_content_types($type_name = NULL) {
+  if (module_exists('fieldgroup')) {
+    // Add information about fieldgroups.
+    
+  }
+  if (module_exists('content')) {
+    // content.module is installed, so return the data collected there.
+    return content_types($type_name);
+  }
+  // handle type name with either an underscore or a dash
+  $type_name = !empty($type_name) ? str_replace('-', '_', $type_name) : NULL;
+
+  $info = _msnf_content_type_info();
+  if (isset($info['content types'])) {
+    if (!isset($type_name)) {
+      return $info['content types'];
+    }
+    if (isset($info['content types'][$type_name])) {
+      return $info['content types'][$type_name];
+    }
+  }
+  return array('tables' => array(), 'fields' => array(), 'extra' => array());
+}
+
+/**
+ * Return a list of field types.
+ */
+function _msnf_content_field_types() {
+  if (module_exists('content')) {
+    return _content_field_types();
+  }
+  $info = _msnf_content_type_info();
+  return isset($info['field types']) ? $info['field types'] : array();
+}
+
+/**
+ * Collate all information on content types, fields, and related structures.
+ * If content.module is active, return the data from _content_type_info().
+ *
+ * @param $reset
+ *   If TRUE, clear the cache and fetch the information from the database again.
+ */
+function _msnf_content_type_info($reset = FALSE) {
+  global $language;
+  static $info;
+
+  if (module_exists('content')) {
+    // content.module is installed, so return the data collected there.
+    return _content_type_info($reset);
+  }
+
+  if ($reset || !isset($info)) {
+    if (!$reset && $cached = cache_get('msnf_content_type_info:' . $language->language)) {
+      $info = $cached->data;
+    }
+    else {
+      $info = array(
+        'field types' => array(), // Always empty (filled by content.module).
+        'widget types' => array(),
+        'fields' => array(), // Always empty (filled by content.module).
+        'content types' => array(),
+      );
+
+      // Populate actual field instances.
+      foreach (node_get_types('types', NULL, TRUE) as $type_name => $data) {
+        $type = (array) $data;
+        $type['url_str'] = str_replace('_', '-', $type['type']);
+        $type['fields'] = array();
+        $type['tables'] = array();
+
+        // Gather information about non-CCK 'fields'.
+        $extra_fields = msnf_extra_fields($type_name);
+        $extra = module_invoke_all('content_extra_fields', $type_name);
+        $extra = array_merge($extra_fields, $extra);
+        // Call all implementations of hook_content_extra_fields_alter().
+        drupal_alter('content_extra_fields', $extra, $type_name);
+        // Add saved weights.
+        foreach (variable_get('content_extra_weights_' . $type_name, array()) as $key => $value) {
+          // Some stored entries might not exist anymore, for instance if uploads
+          // have been disabled, or vocabularies removed...
+          if (isset($extra[$key])) {
+            $extra[$key]['weight'] = $value;
+          }
+        }
+        $type['extra'] = $extra;
+
+        $info['content types'][$type_name] = $type;
+      }
+
+      cache_set('msnf_content_type_info:' . $language->language, $info);
+    }
+  }
+  return $info;
+}
+
+/**
+ * Clear the cache of content_types; called in several places when content
+ * information is changed.
+ */
+function msnf_clear_type_cache($rebuild_schema = FALSE) {
+  if (module_exists('content')) {
+    // Clear content's cache if content.module is installed.
+    content_clear_type_cache($rebuild_schema);
+  }
+  cache_clear_all('*', 'cache', TRUE);
+  _msnf_content_type_info(TRUE);
+
+  // Refresh the schema to pick up new information.
+  if ($rebuild_schema) {
+    $schema = drupal_get_schema(NULL, TRUE);
+  }
+}
+
+/**
+ * Get information about non-CCK 'node fields' defined in core.
+ * Shameless copy of content_content_extra_fields().
+ */
+function msnf_extra_fields($type_name) {
+  $type = node_get_types('type', $type_name);
+  $extra = array();
+
+  if ($type->has_title) {
+    $extra['title'] = array(
+      'label' => $type->title_label,
+      'description' => t('Node module form.'),
+      'weight' => -5
+    );
+  }
+  if ($type->has_body) {
+    $extra['body_field'] = array(
+      'label' => $type->body_label,
+      'description' => t('Node module form.'),
+      'weight' => 0,
+      'view' => 'body'
+    );
+  }
+  $extra['revision_information'] = array(
+    'label' => t('Revision information'),
+    'description' => t('Node module form.'),
+    'weight' => 20
+  );
+  $extra['author'] = array(
+    'label' => t('Authoring information'),
+    'description' => t('Node module form.'),
+    'weight' => 20,
+  );
+  $extra['options'] = array(
+    'label' => t('Publishing options'),
+    'description' => t('Node module form.'),
+    'weight' => 25,
+  );
+  if (module_exists('comment')) {
+    $extra['comment_settings'] = array(
+      'label' => t('Comment settings'),
+      'description' => t('Comment module form.'),
+      'weight' => 30
+    );
+  }
+  if (module_exists('locale') && variable_get("language_content_type_$type_name", 0)) {
+    $extra['language'] = array(
+      'label' => t('Language'),
+      'description' => t('Locale module form.'),
+      'weight' => 0
+    );
+  }
+  if (module_exists('translation') && translation_supported_type($type_name)) {
+    $extra['translation'] = array(
+      'label' => t('Translation settings'),
+      'description' => t('Translation module form.'),
+      'weight' => 30
+    );
+  }
+  if (module_exists('menu')) {
+    $extra['menu'] = array(
+      'label' => t('Menu settings'),
+      'description' => t('Menu module form.'),
+      'weight' => -2
+    );
+  }
+  if (module_exists('taxonomy') && taxonomy_get_vocabularies($type_name)) {
+    $extra['taxonomy'] = array(
+      'label' => t('Taxonomy'),
+      'description' => t('Taxonomy module form.'),
+      'weight' => -3
+    );
+  }
+  if (module_exists('book')) {
+    $extra['book'] = array(
+      'label' => t('Book'),
+      'description' => t('Book module form.'),
+      'weight' => 10
+    );
+  }
+  if (module_exists('path')) {
+    $extra['path'] = array(
+      'label' => t('Path settings'),
+      'description' => t('Path module form.'),
+      'weight' => 30
+    );
+  }
+  if ($type_name == 'poll' && module_exists('poll')) {
+    $extra['title'] = array(
+      'label' => t('Poll title'),
+      'description' => t('Poll module title.'),
+      'weight' => -5
+    );
+    $extra['choice_wrapper'] = array(
+      'label' => t('Poll choices'),
+      'description' => t('Poll module choices.'),
+      'weight' => -4
+    );
+    $extra['settings'] = array(
+      'label' => t('Poll settings'),
+      'description' => t('Poll module settings.'),
+      'weight' => -3
+    );
+  }
+  if (module_exists('upload') && variable_get("upload_$type_name", TRUE)) {
+    $extra['attachments'] = array(
+      'label' => t('File attachments'),
+      'description' => t('Upload module form.'),
+      'weight' => 30,
+      'view' => 'files'
+    );
+  }
+
+  return $extra;
+}
+
+/**
+ * Check if a step has any required fields on it (and can be skipped).
+ *
+ * @param <array> $form
+ *   The node form.
+ * @param <array> $step 
+ *   The step to check for required fields.
+ */
+function msnf_step_has_required_fields($form, $step) {
+  $required_fields = array();
+  $fields = $step['fields'];
+  foreach ($fields as $field_name => $field) {
+    if (isset($form[$field_name]) && ($required = $form[$field_name]['#required']) == 1) {
+      $required_fields[] = $field_name;
+    }
+  }
+  // We have at least 1 required field.
+  return count($required_fields) > 0;
+}
+
+/**
+ * Additional submit handler for content_remove_form().
+ */
+function msnf_field_remove_form_submit($form, &$form_state) {
+  $form_values = $form_state['values'];
+  db_query("DELETE FROM {msnf_step_fields} WHERE type_name = '%s' AND field_name = '%s'", $form_values['type_name'], $form_values['field_name']);
+}
+
+/**
+ * @ingroup Features
+ * {
+ */
+
+/**
+ * Implementation of hook_features_api().
+ */
+function msnf_features_api() {
+  $path = drupal_get_path('module', 'msnf') .'/includes';
+  return array(
+    'msnf_step' => array(
+      'name' => 'Multistep Nodeform Step',
+      'file' => $path .'/msnf.features.inc',
+      'default_hook' => 'msnf_step_default_steps',
+      'feature_source' => TRUE,
+    ),
+  );
+}
+
+/**
+ * }
+ */

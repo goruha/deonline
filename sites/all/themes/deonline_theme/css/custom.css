@@ -125,3 +125,12 @@ div.view-program-types div.inner div.view-content {
   display: inline-block;
   width: 143px;
 }
+
+#header-site-info-inner {
+  min-width: 400px !important;
+}
+
+html.js .fusion-horiz-login#block-user-0 #user-login-form label {
+  color: black;
+  top: 13px;
+}

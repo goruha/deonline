@@ -1,0 +1,225 @@
+<?php
+/**
+ * @file
+ * Install and update functions for the closedquestion module.
+ */
+
+/**
+ * Implements hook_schema()
+ */
+function closedquestion_schema() {
+  $schema = array();
+  $schema['cq_user_answer'] = array(
+    'description' => t('Store for users answers to questions.'),
+    'fields' => array(
+      'uid' => array(
+        'description' => t('User ID of the user.'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'disp-width' => '10',
+      ),
+      'nid' => array(
+        'description' => t('Node ID of the question-node.'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'disp-width' => '10',
+      ),
+      'once_correct' => array(
+        'description' => t('Has the user answerd the question correct once in the past?'),
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'disp-width' => '4',
+      ),
+      'tries' => array(
+        'description' => t('The number of times the user answered the question.'),
+        'type' => 'int',
+        'size' => 'small',
+        'not null' => TRUE,
+        'disp-width' => '6',
+      ),
+      'answer' => array(
+        'description' => t('The actual answer of the user.'),
+        'type' => 'text',
+        'not null' => TRUE,
+      ),
+      'data' => array(
+        'description' => t('Additional per-user data a question needs to store.'),
+        'type' => 'text',
+        'not null' => TRUE,
+      ),
+      'unixtime' => array(
+        'description' => t('Timestamp of when this answer was given.'),
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'primary key' => array('uid', 'nid'),
+  );
+
+  $schema['cq_user_answer_log'] = array(
+    'description' => t('Log users answers for educational research use.'),
+    'fields' => array(
+      'log_id' => array(
+        'description' => t('The id of the log-entry.'),
+        'type' => 'serial',
+        'not null' => TRUE,
+      ),
+      'uid' => array(
+        'description' => t('User ID of the user.'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'nid' => array(
+        'description' => t('Node ID of the question-node.'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'unixtime' => array(
+        'description' => t('Timestamp of when this answer was given.'),
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+      'once_correct' => array(
+        'description' => t('Has the user answerd the question correct once in the past?'),
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+      ),
+      'tries' => array(
+        'description' => t('The number of times the user answered the question.'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'size' => 'small',
+        'not null' => TRUE,
+      ),
+      'answer' => array(
+        'description' => t('The actual answer of the user.'),
+        'type' => 'text',
+        'not null' => TRUE,
+      ),
+      'evalId' => array(
+        'description' => t('The evaluation session this user-action was part of.'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+    ),
+    'primary key' => array('log_id'),
+    'indexes' => array(
+      'uidnid' => array('uid', 'nid'),
+    ),
+  );
+
+  return $schema;
+}
+
+/**
+ * Implements hook_install()
+ */
+function closedquestion_install() {
+  // Create my tables.
+  drupal_install_schema('closedquestion');
+}
+
+/**
+ * Implements hook_uninstall()
+ */
+function closedquestion_uninstall() {
+  // Drop my tables.
+  drupal_uninstall_schema('closedquestion');
+}
+
+/**
+ * Implements hook_requirements()
+ */
+function closedquestion_requirements($phase) {
+  $requirements = array();
+  $t = get_t();
+
+  switch ($phase) {
+    case 'install':
+      if (!class_exists('DomDocument')) {
+        $requirements['closedquestion_DomDocument'] = array(
+          'title' => $t('ClosedQuestion install error'),
+          'value' => $t('class DomDocument not found'),
+          'description' => $t('PHP XML class DomDocument does not exist, maybe you need to install the php-xml package in your operating system?'),
+          'severity' => REQUIREMENT_ERROR,
+        );
+      }
+      if (!class_exists('DOMXPath')) {
+        $requirements['closedquestion_DOMXPath'] = array(
+          'title' => $t('ClosedQuestion install error'),
+          'value' => $t('class DOMXPath not found'),
+          'description' => $t('PHP XML class DOMXPath does not exist, maybe you need to install the php-xml package in your operating system?'),
+          'severity' => REQUIREMENT_ERROR,
+        );
+      }
+      break;
+
+    case 'runtime':
+      $jquery_path = library_get_path('jquery-1.4', array('jquery.min.js', 'jquery.js'), FALSE);
+      $jquery_json_path = library_get_path('jquery-json', array('jquery.json.min.js', 'jquery.json.js'), FALSE);
+      $jquery_jstree_path = library_get_path('jquery-jstree', array('jquery.jstree.min.js', 'jquery.jstree.js'), FALSE);
+      $jsdraw2d_path = library_get_path('jsDraw2D', array('jsDraw2D.js'), FALSE);
+
+      if ($jquery_path === FALSE) {
+        $requirements['closedquestion_jquery_1.4'] = array(
+          'title' => $t('ClosedQuestion install warning'),
+          'value' => $t('JQuery 1.4 not found'),
+          'description' => $t('Please install jquery 1.4 as per the README.txt. Currently a fallback from googleapis is used.'),
+          'severity' => REQUIREMENT_WARNING,
+        );
+      }
+      if ($jquery_json_path === FALSE) {
+        $requirements['closedquestion_jquery-json'] = array(
+          'title' => $t('ClosedQuestion install warning'),
+          'value' => $t('JQuery-json not found'),
+          'description' => $t('Please install jquery-json as per the README.txt. Currently a fallback from a remote site is used.'),
+          'severity' => REQUIREMENT_WARNING,
+        );
+      }
+      if ($jquery_jstree_path === FALSE) {
+        $requirements['closedquestion_jquery-jstree'] = array(
+          'title' => $t('ClosedQuestion install warning'),
+          'value' => $t('JQuery-jstree not found'),
+          'description' => $t('Please install jquery-jstree as per the README.txt. Currently a fallback from a remote site is used.'),
+          'severity' => REQUIREMENT_WARNING,
+        );
+      }
+      if ($jsdraw2d_path === FALSE) {
+        $requirements['closedquestion_jsdraw2d'] = array(
+          'title' => $t('ClosedQuestion install warning'),
+          'value' => $t('jsDraw2D not found'),
+          'description' => $t('Please install jsDraw2D as per the README.txt. Currently a fallback from a remote site is used.'),
+          'severity' => REQUIREMENT_WARNING,
+        );
+      }
+      break;
+  }
+
+  return $requirements;
+}
+
+/**
+ * Implements hook_update_N()
+ *
+ * Add unixtime to user_answer table.
+ */
+function closedquestion_update_6201() {
+  $results = array();
+  if (!db_column_exists('cq_user_answer', 'unixtime')) {
+    db_add_field($results, 'cq_user_answer', 'unixtime', array(
+      'description' => t('Timestamp of when this answer was given.'),
+      'type' => 'int',
+      'not null' => TRUE,
+      'default' => 0,
+    ));
+  }
+  return $results;
+}

@@ -1,0 +1,11 @@
+
+ * Add checks for jquery_update version & jquery_ui versions.
+
+ * More layout options for M-A and M-C questions (options in a table)
+
+ * Add a setting to turn off logging.
+
+ * Add validator code to fillblanks question so that for instance filling in a
+   non-numeric value does not count as a "try" but gives a validation error instead.
+
+ * Import/Export

@@ -57,5 +57,17 @@ function deonline_theme_preprocess_node(&$vars) {
   $template[] = $vars['type'];
   $template[] = $vars['page'] ? 'full' : 'teaser';
   $vars['template_files'][] = implode('-', $template);
+
+  if ($vars['type'] == 'program_types') {
+    if (user_is_logged_in()) {
+      $nid = $vars['nid'];
+      $vars['subscribe_link'] = l(t('Записаться'), 'node/add/course-request', array('query' => array('edit[group_cr_info][field_cr_course][nid][nid]' => $nid)));
+    }
+    else {
+      $nid = $vars['nid'];
+      $link = url('node/add/course-request', array('query' => array('edit[group_cr_info][field_cr_course][nid][nid]' => $nid)));
+      $vars['subscribe_link'] = l(t('Записаться'), 'user/register', array('query' => array('destination' => $link)));
+    }
+  }
 }
 

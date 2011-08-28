@@ -1,0 +1,45 @@
+<?php
+
+/**
+ * @file
+ * Install file
+ */
+
+/**
+ * Implements of hook_install().
+ */
+function quiz_prerequisite_install() {
+  drupal_install_schema('quiz_prerequisite');
+}
+
+/**
+ * Implements of hook_uninstall().
+ */
+function quiz_prerequisite_uninstall() {
+  drupal_uninstall_schema('quiz_prerequisite');
+}
+
+/**
+ * Implements of hook_schema().
+ */
+function quiz_prerequisite_schema() {
+  $schema['quiz_prereq_list'] = array(
+    'description' => 'Table for holding quiz prerequisites',
+    'fields' => array(
+      'quiz_nid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'prereq_quiz_nid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'primary key' => array('quiz_nid, prereq_quiz_nid'),
+  );
+  return $schema;
+}

@@ -1,0 +1,199 @@
+<?php
+
+/**
+ * @file
+ * Quiz Prerequisite Module.  Inspiration and basic idea
+ * taken from the Drupal 5 module posted by @sunsetco 
+ * from http://drupal.org/node/518104
+ */
+
+define ('PREREQUISITE_MESSAGE', variable_get('prerequisite_message', 'In order to proceed with the following quiz, you must take the prerequisite.'));
+define ('PREREQUISITE_URL', variable_get('prerequisite_url', FALSE));
+
+/**
+ * Implements hook_help().
+ */
+function quiz_prerequisite_help($section) {
+  switch ($section) {
+    case 'admin/help#quiz_prerequisite':
+      return '<p>' . t('Quiz Prerequisite are quizzes that must be taken before another quiz can be taken.
+      This module lets administrators configure prerequisites for quizzes.  It lets administrators enforce prerequisites by user roles.') . '</p>';
+  }
+}
+
+/**
+ * Implements hook_menu().
+ */
+function quiz_prerequisite_menu() {
+  $items = array();
+
+  $items['quiz-prerequisite-not-met'] = array(
+    'title' => 'Quiz Prerequisite Not Met',
+    'page callback' => 'quiz_prerequisite_not_met_page',
+    'access callback' => TRUE,
+    'file' => 'quiz_prerequisite.pages.inc',
+    'type' => MENU_CALLBACK,
+  );
+  $items['node/%node/prerequisite'] = array(
+    'title' => 'Prerequisites',
+    'description' => 'Add Prerequisite to selected Exam',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('quiz_prerequisite_select_form'),
+    'access callback' => 'quiz_type_confirm',
+    'access arguments' => array(1, 'update'),
+    'file' => 'quiz_prerequisite.pages.inc',
+    'file path' => drupal_get_path('module', 'quiz_prerequisite'),
+    'type' => MENU_LOCAL_TASK,
+  );
+  $items['admin/quiz/settings/quiz_prerequisite'] = array(
+    'title' => 'Prerequisite Configuration',
+    'description' => 'Quiz Prerequisite Configuration',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('quiz_prerequisite_admin_form'),
+    'access arguments' => array('administer quiz configuration'),
+    'file' => 'quiz_prerequisite.pages.inc',
+    'file path' => drupal_get_path('module', 'quiz_prerequisite'),
+    'type' => MENU_NORMAL_ITEM,  
+  );
+  
+  return $items;
+}
+
+/**
+ * Implements hook_nodeapi().
+ */
+function quiz_prerequisite_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
+  if ($node->type == 'quiz') {
+    switch ($op) {
+      case 'load':
+          $node->prerequisite_nid = quiz_prerequisite_has_prereq($node->nid);
+        break;
+    }
+  }  
+}
+
+/**
+ * Load the available quizzes for the configuration forms
+ */
+function quiz_prerequisite_load_quizzes($parent_quiz_id = NULL) {
+  // Do not display the parent_quiz_id in drop down or any other quiz that depend on $parent_quiz_id (circular logic testing)
+  if (!is_null($parent_quiz_id)) {
+    $parent_list = quiz_prerequisite_circular_chk($parent_quiz_id);
+    $course_array = db_query("SELECT n.nid, n.title FROM {node} n WHERE n.type='quiz' AND n.nid NOT IN (%s) ORDER BY title ASC", $parent_list);
+  } 
+  else {
+    $course_array = db_query("SELECT n.nid, n.title FROM {node} n WHERE n.type='quiz' ORDER BY title ASC");
+  }
+  
+  $course_return[''] = '';
+  while ($courses = db_fetch_object($course_array)) {
+    $course_return[$courses->nid] = $courses->title;
+  }
+  return $course_return;
+}
+
+/**
+ * Do circular check to make sure the appropriate quizzes 
+ * show up in the configuration forms  
+ */
+function quiz_prerequisite_circular_chk($parent_quiz_id) {
+  $quiz_list = $parent_quiz_id;
+  $course_array = db_query("SELECT pr.quiz_nid FROM {quiz_prereq_list} pr WHERE pr.prereq_quiz_nid=%d", $parent_quiz_id);
+  while ($courses = db_fetch_object($course_array)) {
+    $quiz_list .= "," . quiz_prerequisite_circular_chk($courses->quiz_nid);
+  }
+
+  return $quiz_list;
+}
+
+/**
+ * Implements hook_quiz_begin().
+ */
+function quiz_prerequisite_quiz_begin($quiz, $rid) {
+  global $user;
+  if ($quiz->prerequisite_nid != FALSE) {
+    $allowed = quiz_prerequisite_check($quiz->prerequisite_nid, $quiz->nid, $user);
+    if ($allowed == FALSE) {
+      if (PREREQUISITE_URL == TRUE) {
+        drupal_set_message(check_plain(PREREQUISITE_MESSAGE));
+        drupal_goto('node/' . $quiz->prerequisite_nid .'/take');
+      }
+      else {
+        drupal_goto('quiz-prerequisite-not-met');
+      }
+    }
+  }
+}
+
+/**
+ * Run some checks to see if the prerequisite quiz needs to be
+ * taken or not.  Currently there is support for Roles.
+ * @todo add support for scoring requirements
+ */
+function quiz_prerequisite_check($prerequisite_nid, $quiz_nid, $account) {
+  $allowed = TRUE;
+  //uid = 1 gets through all the time
+  if ($account->uid == 1) {
+    return TRUE;
+  }
+  if (($skip = quiz_prerequisite_role_check($account->roles, $quiz_nid)) == FALSE) {
+    $results = _quiz_get_results($prerequisite_nid, $account->uid);
+    if (count($results) == 0) {
+      $allowed = FALSE;
+    }
+    else {
+      $result = array_shift($results);
+      if ($result['time_end'] == 0) {
+        $allowed = FALSE;
+      }
+    }
+  }
+  return $allowed;
+}
+
+/**
+ * Check which user roles do not have to take
+ * the prerequisite quizzes
+ */
+function quiz_prerequisite_role_check($user_roles, $quiz_nid) {
+  $skip = FALSE;
+  $skipped_roles = variable_get("quiz_prereq_can_skip_$quiz_nid", array());
+  $access_false = array();
+  $access_true = array();
+  
+  //no roles are configured.
+  if (count($skipped_roles) == 0) {
+    $skip = FALSE;
+  }
+  //split the roles into ones that are accessible and ones that are not
+  foreach ($skipped_roles as $role_id => $selected) {
+    if (empty($selected)) {
+      $access_false[] = $role_id;
+    }
+    else {
+      $access_true[] = $role_id;
+    }
+  }
+  //if everything is empty, then all is allowed
+  if (count(user_roles()) == count($access_false)) {
+    $skip = FALSE;
+  }
+  if (count($access_true) > 0) {
+    foreach ($access_true as $key => $value) {
+      if (!empty($user_roles[$value])) {
+        $skip = TRUE;
+      }
+    }
+  }
+  return $skip;
+}
+
+/**
+ * Helper function to fetch the prerequisite for a quiz 
+ */
+function quiz_prerequisite_has_prereq($quiz_id) {
+  if (($result = db_result(db_query("SELECT n.nid FROM {node} n INNER JOIN {quiz_prereq_list} pr ON pr.prereq_quiz_nid=n.nid WHERE pr.quiz_nid=%d", $quiz_id))) != FALSE) {
+    return $result;
+  } 
+  return FALSE;
+}

@@ -1,0 +1,23 @@
+/* 'Manage steps' overview */
+#msnf-step-overview-form .advanced-help-link {
+  margin: 4px 4px 0 0;/*LTR*/
+}
+#msnf-step-overview-form .label-group {
+  font-weight: bold;
+}
+table#msnf-step-overview .label-add-new-step {
+  float: left;/*LTR*/
+}
+table#msnf-step-overview tr.msnf-add-new .tabledrag-changed {
+  display: none;
+}
+table#msnf-step-overview tr.msnf-add-new .description {
+  margin-bottom: 0;
+}
+table#msnf-step-overview .msnf-new {
+  font-weight: bold;
+  padding-bottom: .5em;
+}
+table#msnf-step-overview .label-step {
+  font-weight: bold;
+}

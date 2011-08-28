@@ -1,0 +1,468 @@
+<?php
+
+define('AUN_PUNCTUATION_REMOVE', 0);
+define('AUN_PUNCTUATION_REPLACE', 1);
+define('AUN_PUNCTUATION_DO_NOTHING', 2);
+
+
+/**
+ * Implementation of hook_perm().
+ */
+function auto_username_perm() {
+  return array('configure username patterns');
+}
+
+/**
+ * Implementation of hook_menu().
+ */
+function auto_username_menu() {
+  $items = array();
+
+  $items['admin/user/auto-username'] = array(
+    'title' => 'Username rules',
+    'description' => 'Configure the way that usernames are automatically generated.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('auto_username_configuration'),
+    'access arguments' => array('configure username patterns'),
+  );
+
+  return $items;
+}
+
+function auto_username_configuration() {
+
+  // Always run before pathauto
+  if (module_exists('pathauto')) {
+    $weight = db_result(db_query("SELECT weight FROM {system} WHERE name='auto_username'"));
+
+    // update the weight in the system table
+    db_query("UPDATE {system} SET weight=" . ($weight + 1) . " WHERE name='pathauto'");
+  }
+
+  $form = array();
+
+  // Other module configuration.
+  $form['aun_general_settings'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('General settings'),
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE,
+  );
+
+  // The basic pattern.  Always supports PHP, as there's little value in not doing so.
+  $form['aun_general_settings']['aun_pattern'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Pattern for username'),
+    '#description' => t('Enter the pattern for usernames.  You may use any of the tokens listed below.'),
+    '#default_value' => variable_get('aun_pattern', ''),
+  );
+
+  $form['aun_general_settings']['token_help'] = array(
+    '#title' => t('Replacement patterns'),
+    '#type' => 'fieldset',
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+    '#description' => t('Note that profile fields that are not present in the user registration form will get replaced with an empty string when the account is created.  That is rarely desirable.  Also, values such as the user id are not available yet on user creation, so using them is not advisable.'),
+  );
+  $form['aun_general_settings']['token_help']['help'] = array(
+    '#value' => theme('token_help', 'user'),
+  );
+
+  // Other module configuration.
+  $form['aun_other_settings'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Other settings'),
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE,
+  );
+  $form['aun_other_settings']['aun_php'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Evaluate PHP in pattern.'),
+    '#description' => t('If this box is checked, the pattern will be executed as PHP code after token substitution has taken place.  You must surround the PHP code in &lt;?php and ?&gt; tags.  Token replacement will take place before PHP code execution.  That means you can place tokens into the PHP code where you want that value to appear literally.'),
+    '#default_value' => variable_get('aun_php', 0),
+  );
+  $form['aun_other_settings']['aun_update_on_edit'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Update on user edit'),
+    '#description' => t('If this box is checked, the username will be reset any time the user\'s profile is updated.  That can help to enforce a username format, but may result in a user\'s login name changing unexpectedly.  It is best used in conjunction with an alternative login mechanism, such as OpenID or an e-mail address.'),
+    '#default_value' => variable_get('aun_update_on_edit', 1),
+  );
+  $form['aun_other_settings']['aun_reduce_ascii'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Reduce strings to letters and numbers from ASCII-96'),
+    '#default_value' => variable_get('aun_reduce_ascii', 0),
+    '#description' => t('Filters the new username to only letters and numbers found in the ASCII-96 set.'),
+  );
+  $form['aun_other_settings']['aun_replace_whitespace'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Replace whitespace with separator.'),
+    '#default_value' => variable_get('aun_replace_whitespace', 0),
+    '#description' => t('Replace all whitespace in tokens with the separator character specified below.  Note that this will affect the tokens themselves, not the pattern specified above.  To avoid spaces entirely, ensure that the pattern above contains no spaces.'),
+  );
+  $form['aun_other_settings']['aun_separator'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Separator'),
+    '#description' => t('This value will be used in place of selected punctuation characters (see below).'),
+    '#default_value' => variable_get('aun_separator', '-'),
+  );
+
+  $options = array(
+    AUN_PUNCTUATION_REMOVE => t('Remove'),
+    AUN_PUNCTUATION_REPLACE => t('Replace by separator'),
+    AUN_PUNCTUATION_DO_NOTHING => t('No action (do not replace)'),
+  );
+  $form['punctuation'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Punctuation settings'),
+    '#description' => t('The following replacement rules will be applied to each token.'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+  foreach (auto_username_punctuation_chars() as $name => $details) {
+    $form['punctuation']['aun_punctuation_'. $name] = array(
+      '#type' => 'select',
+      '#title' => $details['name'],
+      '#default_value' => variable_get('aun_punctuation_'. $name, AUN_PUNCTUATION_REMOVE),
+      '#options' => $options,
+    );
+  }
+
+  return system_settings_form($form);
+}
+
+/**
+ * Implementation of hook_user().
+ */
+function auto_username_user($op, &$edit, &$account, $category = NULL) {
+  static $new_name;
+
+  switch ($op) {
+    case 'validate':
+      $new_name = _auto_username_patternprocessor($account);
+
+      // Borrowed from _user_edit_validate().
+      if ($error = user_validate_name($new_name)) {
+        form_set_error('name', $error);
+      }
+
+      // Add a serial to the name for uniqueness.
+      $counter = 1;
+      $base_name = $new_name;
+      while (db_result(db_query("SELECT COUNT(uid) FROM {users} WHERE uid <> %d AND LOWER(name) = LOWER('%s')", $account->uid, $new_name)) > 0) {
+        $new_name = $base_name . $counter++;
+      }
+      // Save to the session so that we can grab it in the form submit handler
+      // later.  Yes, we could use a global instead, but then we'd be using
+      // globals!
+      $_SESSION['auto_username']['new_name'] = $new_name;
+      break;
+
+    case 'insert':
+      // change $account so that other modules (eg. pathauto) will be able to use the new name
+      $account->name = $new_name;
+      $edit['name'] = $new_name;
+      db_query("UPDATE {users} SET name='%s' WHERE uid=%d", array($new_name, $account->uid));
+      break;
+
+    case 'after_update':
+      // Only process on update if we're configured to do so.
+      // We have to use after_update here instead of the 'update' op because
+      // update happens before user module does its own saving.  Anything we do
+      // to the users table in op update would be overwritten.
+      if (variable_get('aun_update_on_edit', 1)) {
+        db_query("UPDATE {users} SET name='%s' WHERE uid=%d", array($new_name, $account->uid));
+      }
+      break;
+  }
+}
+
+/**
+ * Process an account and return its new username according to the current pattern.
+ *
+ * @param $account
+ *   The user object to process.
+ *
+ * @return The new name for the user object.
+ */
+function _auto_username_patternprocessor($account) {
+  $output = '';
+  // Because token.module doesn't let us escape individual tokens, we have to
+  // bypass its normal processing routine.  This pattern is borrowed almost
+  // entirely from pathauto.
+  $placeholders = auto_username_get_placeholders('user', (object) $account);
+  $pattern = variable_get('aun_pattern', '');
+  if (trim($pattern)) {
+    $output = str_replace($placeholders['tokens'], $placeholders['values'], $pattern);
+    //$output = token_replace($pattern, 'user', $account);
+    if (variable_get('aun_php', 0)) {
+      $output = drupal_eval($output);
+    }
+  }
+  return trim($output);
+}
+
+/**
+ * Get the placeholders to use for string translation.
+ *
+ * This function is largely stolen from pathauto.
+ *
+ * @param $type
+ * @param $object
+ */
+function auto_username_get_placeholders($type, $object) {
+  $full   = token_get_values($type, $object, TRUE);
+  $tokens = token_prepare_tokens($full->tokens);
+  $values = auto_username_clean_token_values($full);
+  return array('tokens' => $tokens, 'values' => $values);
+}
+
+/**
+ * Cleans tokens so they are PHP-friendly.
+ *
+ * This function is largely stolen from pathauto.
+ *
+ * @param $values
+ *   An array of token values that need to be "cleaned" for use in the URL.
+ *
+ */
+function auto_username_clean_token_values($full) {
+  foreach ($full->values as $key => $value) {
+    $full->values[$key] = auto_username_cleanstring($value, FALSE);
+  }
+  return $full->values;
+}
+
+/**
+ * Clean up a string value to have only alphanumeric and separator values.
+ *
+ * This function is largely stolen from pathauto.
+ *
+ * @param $string
+ *   A string to clean.
+ *
+ * @return
+ *   The cleaned string.
+ */
+function auto_username_cleanstring($string, $clean_slash = TRUE) {
+  // Default words to ignore
+  $ignore_words = array(
+    "a", "an", "as", "at", "before", "but", "by", "for", "from",
+    "is", "in", "into", "like", "of", "off", "on", "onto", "per",
+    "since", "than", "the", "this", "that", "to", "up", "via",
+    "with",
+  );
+
+  // Replace or drop punctuation based on user settings.
+  $separator   = variable_get('aun_separator', '-');
+  $output      = $string;
+  $punctuation = auto_username_punctuation_chars();
+  foreach ($punctuation as $name => $details) {
+    $action = variable_get('aun_punctuation_'. $name, 0);
+    // 2 is the action for "do nothing" with the punctuation
+    if ($action != AUN_PUNCTUATION_DO_NOTHING) {
+      // Slightly tricky inline if which either replaces with the separator or nothing
+      $output = str_replace($details['value'], ($action ? $separator : ''), $output);
+    }
+  }
+
+  // We definitely don't like slashes.
+  if ($clean_slash) {
+    $output = str_replace('/', '', $output);
+  }
+
+  // Reduce to the subset of ASCII96 letters and numbers
+  if (variable_get('aun_reduce_ascii', FALSE)) {
+    $pattern = '/[^a-zA-Z0-9\/]+/ ';
+    $output = preg_replace($pattern, $separator, $output);
+  }
+
+  /*
+  // Get rid of words that are on the ignore list
+  $ignore_re = "\b". preg_replace("/,/", "\b|\b", variable_get('pathauto_ignore_words', $ignore_words)) ."\b";
+
+  if (function_exists('mb_ereg_replace')) {
+    $output = mb_ereg_replace("/$ignore_re/i", "", $output);
+  }
+  else {
+    $output = preg_replace("/$ignore_re/i", "", $output);
+  }
+  */
+
+
+  // Replace whitespace with a separator.
+  if (variable_get('aun_replace_whitespace', 0)) {
+    $output = preg_replace("/\s+/", $separator, $output);
+  }
+
+  // In preparation for pattern matching,
+  // escape the separator if and only if it is not alphanumeric)
+  if (isset($separator)) {
+    if (preg_match('/^[^'. PREG_CLASS_ALNUM .']+$/uD', $separator)) {
+      $seppattern = $separator;
+    }
+    else {
+      $seppattern = '\\'. $separator;
+    }
+    // Trim any leading or trailing separators (note the need to
+    $output = preg_replace("/^$seppattern+|$seppattern+$/", "", $output);
+
+    // Replace multiple separators with a single one
+    $output = preg_replace("/$seppattern+/", "$separator", $output);
+  }
+
+
+  // Enforce the maximum component length
+  $maxlength = min(variable_get('pathauto_max_component_length', 100), 128);
+  $output = drupal_substr($output, 0, $maxlength);
+
+  return $output;
+}
+
+/**
+ * Implementation of hook_form_alter().
+ */
+function auto_username_form_alter(&$form, &$form_state, $form_id) {
+  if ('user_register' == $form_id) {
+    // Fake a real user name submission, because we have to validate against
+    // the bulit-in username validation even though we're going to change the
+    // name anyway.
+    $form['name'] = array(
+      '#type' => 'value',
+      '#value' => user_password(10),
+    );
+    $form['#submit'][] = 'auto_username_user_register_submit';
+  }
+
+  if ('user_edit' == $form_id && variable_get('aun_update_on_edit', 1)) {
+    // The username may not be editable.
+    if (isset($form['account']['name'])) {
+      $form['account']['name'] = array(
+        '#type' => 'value',
+        '#value' => $form['account']['name']['#default_value'] ? $form['account']['name']['#default_value'] : user_password(10),
+      );
+    }
+  }
+}
+
+/**
+ * Submit handler for the user regsitration form.
+ *
+ * We need to override the submit handler so that we can change the username
+ * before the welcome email gets sent out.  Unfortunately the email gets sent
+ * directly from the form submit handler.  Argl.
+ */
+function auto_username_user_register_submit($form, &$form_state) {
+
+  $form_state['values']['name'] = $_SESSION['auto_username']['new_name'];
+  unset($_SESSION['auto_username']['new_name']);
+
+  return;
+}
+
+/**
+ * Returns an array of arrays for punctuation values keyed by a name.
+ *
+ * Including the value and a textual description
+ * Can and should be expanded to include "all" non text punctuation values
+ *
+ * This method is ripped verbatim from pathauto, until this functionality can
+ * be pushed down into token.module.
+ */
+function auto_username_punctuation_chars() {
+  $punctuation = array();
+
+  // Handle " ' , . - _ : ; | { { } ] + = * & % $ � # @ ! ~ ( ) ? < > \
+  $punctuation['double_quotes']      = array('value' => '"', 'name' => t('Double quotes "'));
+  $punctuation['quotes']             = array('value' => "'", 'name' => t("Single quotes (apostrophe) '"));
+  $punctuation['backtick']           = array('value' => "`", 'name' => t("Back tick `"));
+  $punctuation['comma']              = array('value' => ",", 'name' => t('Comma ,'));
+  $punctuation['period']             = array('value' => ".", 'name' => t('Period .'));
+  $punctuation['hyphen']             = array('value' => "-", 'name' => t('Hyphen -'));
+  $punctuation['underscore']         = array('value' => "_", 'name' => t('Underscore _'));
+  $punctuation['colon']              = array('value' => ":", 'name' => t('Colon :'));
+  $punctuation['semicolon']          = array('value' => ";", 'name' => t('Semicolon ;'));
+  $punctuation['pipe']               = array('value' => "|", 'name' => t('Pipe |'));
+  $punctuation['left_curly']         = array('value' => "{", 'name' => t('Left curly bracket {'));
+  $punctuation['left_square']        = array('value' => "[", 'name' => t('Left square bracket ['));
+  $punctuation['right_curly']        = array('value' => "}", 'name' => t('Right curly bracket }'));
+  $punctuation['right_square']       = array('value' => "]", 'name' => t('Right square bracket ]'));
+  $punctuation['plus']               = array('value' => "+", 'name' => t('Plus +'));
+  $punctuation['equal']              = array('value' => "=", 'name' => t('Equal ='));
+  $punctuation['asterisk']           = array('value' => "*", 'name' => t('Asterisk *'));
+  $punctuation['ampersand']          = array('value' => "&", 'name' => t('Ampersand &'));
+  $punctuation['percent']            = array('value' => "%", 'name' => t('Percent %'));
+  $punctuation['caret']              = array('value' => "^", 'name' => t('Caret ^'));
+  $punctuation['dollar']             = array('value' => "$", 'name' => t('Dollar $'));
+  $punctuation['hash']               = array('value' => "#", 'name' => t('Hash #'));
+  $punctuation['at']                 = array('value' => "@", 'name' => t('At @'));
+  $punctuation['exclamation']        = array('value' => "!", 'name' => t('Exclamation !'));
+  $punctuation['tilde']              = array('value' => "~", 'name' => t('Tilde ~'));
+  $punctuation['left_parenthesis']   = array('value' => "(", 'name' => t('Left parenthesis ('));
+  $punctuation['right_parenthesis']  = array('value' => ")", 'name' => t('right parenthesis )'));
+  $punctuation['question_mark']      = array('value' => "?", 'name' => t('Question mark ?'));
+  $punctuation['less_than']          = array('value' => "<", 'name' => t('Less than <'));
+  $punctuation['greater_than']       = array('value' => ">", 'name' => t('Greater than >'));
+  $punctuation['back_slash']         = array('value' => '\\', 'name' => t('Back slash \\'));
+
+  return $punctuation;
+}
+
+
+if (!function_exists('profile_token_values')) {
+  /**
+   * Implementation of hook_token_values().
+   *
+   * We have to fill in support for profile fields, which by rights should be
+   * in token itself.  Hopefully this can be moved back into token module later.
+   */
+  function profile_token_values($type, $object = NULL, $options = array()) {
+    $values = array();
+    switch ($type) {
+      case 'user':
+        if (isset($object)) {
+          $account = $object;
+          // If this routine is called from within the user create process, $object
+          // is an array, not an object.  That is a bug in core.  Please file a patch.
+          $account = (object)$account;
+
+          // Because core will sometimes pass around a user object and sometimes
+          // a partial object, we have to manually load the profile data.  This
+          // is a bug in core.  Please file a patch.
+          profile_load_profile($account);
+        }
+        else {
+          global $user;
+          $account = user_load(array('uid' => $user->uid));
+        }
+
+        $result = db_query("SELECT * FROM {profile_fields} WHERE type='textfield' ORDER BY category, weight");
+        while ($record = db_fetch_object($result)) {
+          $name = isset($account->{$record->name}) ? $account->{$record->name} : '';
+          $values[$record->name .'-raw'] = $name;
+          $values[$record->name .'-filtered'] = trim(check_plain($name));
+        }
+        break;
+    }
+    return $values;
+  }
+
+  /**
+   * Implementation of hook_token_list().
+   *
+   * We have to fill in support for profile fields, which by rights should be
+   * in token itself.  Hopefully this can be moved back into token module later.
+   */
+  function profile_token_list($type = 'all') {
+    if (($type == 'user' || $type == 'all')) {
+
+      $result = db_query("SELECT * FROM {profile_fields} WHERE type='textfield' ORDER BY category, weight");
+      while ($record = db_fetch_object($result)) {
+        $tokens['user'][$record->name .'-raw'] = $record->title;
+        $tokens['user'][$record->name .'-filtered'] = t('@field (filtered)', array('@field' => $record->title));
+      }
+
+      return $tokens;
+    }
+  }
+}
+

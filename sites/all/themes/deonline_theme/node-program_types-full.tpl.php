@@ -12,6 +12,7 @@
         <div class="grid16-inner-8 nested row right">
           <div class="grid16-inner-5 nested row">
             <?php print $group_program_type_prices_rendered; ?>
+            <?php print $subscribe_link; ?>
           </div>
           <div class="grid16-inner-3  nested row right">
             <?php if ($field_pt_book_rendered): ?>

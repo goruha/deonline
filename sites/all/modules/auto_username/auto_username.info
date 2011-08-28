@@ -1,0 +1,11 @@
+; $Id $
+name = Automatic User Names
+description = Allows a user's username to be assigned based on profile fields.
+core = 6.x
+dependencies[] = token
+; Information added by drupal.org packaging script on 2011-02-25
+version = "6.x-1.x-dev"
+core = "6.x"
+project = "auto_username"
+datestamp = "1298618867"
+

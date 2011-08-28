@@ -1,0 +1,11 @@
+name = Quiz Prerequisite
+description = Site Administratos can configure prerequisite requirements a user must satisfy before taking a quiz
+dependencies[] = quiz
+package = Quiz Addon
+core = 6.x
+; Information added by drupal.org packaging script on 2011-02-25
+version = "6.x-6.x-dev"
+core = "6.x"
+project = "quiz_prerequisite"
+datestamp = "1298620035"
+

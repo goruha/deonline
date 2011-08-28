@@ -1,0 +1,16 @@
+; $Id: node_wizard.info,v 1.2 2010/11/19 13:09:21 vladsavitsky Exp $
+name = Node Wizard
+description = Multistep node creation and editing form based on CCK fieldsets.
+dependencies[] = content
+dependencies[] = fieldgroup
+package = CCK
+version = 6.x-1.0
+core = 6.x
+
+
+; Information added by drupal.org packaging script on 2010-11-19
+version = "6.x-1.0"
+core = "6.x"
+project = "node_wizard"
+datestamp = "1290197448"
+

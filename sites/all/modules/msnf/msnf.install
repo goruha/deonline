@@ -1,0 +1,120 @@
+<?php
+
+/**
+ * @file
+ * Installation routines for module "Multistep Nodeform".
+ */
+
+/**
+ * Implementation of hook_install().
+ */
+function msnf_install() {
+  drupal_install_schema('msnf');
+  // Set msnf to a higher weight so that it allows extra fields to load first.
+  db_query("UPDATE {system} SET weight = 1000 WHERE name = 'msnf'");
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function msnf_uninstall() {
+  drupal_uninstall_schema('msnf');
+  // Remove variables created by Multistep Nodeform.
+  db_query("DELETE FROM {variable} WHERE name LIKE '%s%%'", 'msnf_');
+}
+
+/**
+ * Implementation of hook_schema.
+ * 
+ * Defines the database schema for module "Multistep Nodeform".
+ */
+function msnf_schema() {
+  $schema['msnf_step'] = array(
+    'fields' => array(
+      'step_type' => array(
+        'type' => 'varchar', 
+        'length' => 32, 
+        'not null' => TRUE, 
+        'default' => 'standard',
+        'description' => t('The type of the step (defaults to "standard").'),
+      ),
+      'type_name' => array(
+        'type' => 'varchar', 
+        'length' => 32, 
+        'not null' => TRUE, 
+        'default' => '',
+        'description' => t('Name of the content type the step is associated to.'),
+      ),
+      'step_name' => array(
+        'type' => 'varchar', 
+        'length' => 32, 
+        'not null' => TRUE, 
+        'default' => '',
+        'description' => t('Name of the step.'),
+      ),
+      'label' => array(
+        'type' => 'varchar', 
+        'length' => 255, 
+        'not null' => TRUE, 
+        'default' => '',
+        'description' => t('Label of the step.'),
+      ),
+      'settings' => array(
+        'type' => 'text', 
+        'not null' => TRUE, 
+        'serialize' => TRUE,
+        'serialized default' => 'a:0:{}',
+        'description' => t('Step settings as serialized array.'),
+      ),
+      'weight' => array(
+        'type' => 'int', 
+        'not null' => TRUE, 
+        'default' => 0,
+        'description' => t('Weight of step (step order).'),
+      ),
+    ),
+    'primary key' => array(
+      'type_name', 
+      'step_name',
+    ),
+  );
+
+  $schema['msnf_step_fields'] = array(
+    'fields' => array(
+      'type_name' => array(
+        'type' => 'varchar', 
+        'length' => 32, 
+        'not null' => TRUE, 
+        'default' => '',
+        'description' => t('Name of content type the mapping is used in.'),
+      ),
+      'step_name' => array(
+        'type' => 'varchar', 
+        'length' => 32, 
+        'not null' => TRUE, 
+        'default' => '',
+        'description' => t('Name of step for this mapping.'),
+      ),
+      'field_name' => array(
+        'type' => 'varchar', 
+        'length' => 32, 
+        'not null' => TRUE, 
+        'default' => '',
+        'description' => t('Name of field for this mapping.'),
+      ),
+      'weight' => array(
+        'type' => 'int', 
+        'not null' => TRUE, 
+        'default' => 0,
+        'description' => t('Weight of field in step.'),
+      ),
+    ),
+    'primary key' => array(
+      'type_name', 
+      'step_name', 
+      'field_name',
+    ),
+  );
+
+  return $schema;
+}

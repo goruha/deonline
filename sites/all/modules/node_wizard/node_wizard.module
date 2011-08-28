@@ -1,0 +1,1045 @@
+<?php
+// $Id: node_wizard.module,v 1.2 2010/11/19 13:09:21 vladsavitsky Exp $
+
+/**
+ * @file node_wizard.module
+ *
+ * Contain hooks that alter CCK fields and group forms and add a mutlistep functionality.
+ */
+
+/*
+ * @TODO
+ * Usability: replace a step number in selectbox lists with group names if set
+ * at fields and fieldgroup edit forms
+ */
+
+//Permissions
+define('NODE_WIZARD_PERM_ADMINISTER', 'administer node wizard');
+define('NODE_WIZARD_PERM_TOGGLE', 'toggle node wizard');
+
+//Maximum number of steps
+define('NODE_WIZARD_MAX_STEPS', 5);
+
+//Debug trigger
+define('NODE_WIZARD_DEBUG', 0);
+define('NODE_WIZARD_ENABLE_RESTORING', 1);
+
+
+
+/**
+ * Implementation of hook_help().
+ */
+function node_wizard_help($path, $arg) {
+  switch ($path) {
+    case 'admin/help#node_wizard':
+      $output = t('The !node_wizard module adds multiple-step functionality to !cck forms.
+        It does so by assigning a step number to each fieldgroup within the content type and hiding all the groups that do not belong to the current step.
+        The user can then use different submitting buttons that will redirect to the previous, next, or current step.
+        Read the documentation for usage and configuration options.',
+        array(
+          '!node_wizard' => l('Node Wizard', 'http://drupal.org/project/node_wizard'),
+          '!cck' => l('CCK', 'http://drupal.org/project/cck'),
+          //'!documentation' => l('documentation', 'http://drupal.org/node/529976'),
+        )
+      );
+      return $output;
+  }
+}
+
+/**
+ * Implementation of hook_perm().
+ */
+function node_wizard_perm() {
+  return array(NODE_WIZARD_PERM_ADMINISTER, NODE_WIZARD_PERM_TOGGLE);
+}
+
+
+
+/**
+ * Implementation of hook_nodeapi().
+ */
+function node_wizard_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
+  if ($op == 'prepare' || $op == 'validate') {
+    //Node view or Add/Edit form
+    $type = $node->type;
+    if ($type) {
+      //Check if this node type use multistep wizard
+      $type_steps = variable_get('node_wizard_steps_' . $type, 1);
+      if ($type_steps > 1) {
+        //Add some CSS
+        drupal_add_css(drupal_get_path('module', 'node_wizard') . '/node_wizard.css');
+      }
+    }
+  }
+}
+
+/**
+ *
+ * Implementation of hook_form_alter().
+ * This is the node-editing form.
+ *
+ * @param <array> $form         $form array by reference
+ * @param <array> $form_state   $form_state array by reference
+ * @param <string> $form_id     Form ID
+ * @return                      Return nothing
+ */
+function node_wizard_form_alter(&$form, &$form_state, $form_id) {
+  if (isset($form['type']) && isset($form['#node'])) {
+    if (variable_get('node_wizard_steps_' . $form['#node']->type, 1) != 1) {
+      //Do the 1st step
+      if (!$form_state['storage']['step']) {
+        $form_state['storage']['step'] = 1;
+      }
+
+      $form['#after_build'][] = '_node_wizard_restore_form_state';
+
+      //Add navigation buttons  in top of form
+      _node_wizard_add_navigation_buttons($form, $form_state);
+      
+      //Hide a groups that not belong current step
+      _node_wizard_groupfields_rearrange($form, $form_state);
+
+      //Hide a extra-fields that not belong current step
+      _node_wizard_extra_fields_rearrange($form, $form_state);
+
+      //Manage fields that is not belong to any group
+      _node_wizard_fields_rearrange($form, $form_state);
+
+      //Add buttons (Previous, Next, Done and etc).
+      _node_wizard_add_form_buttons($form, $form_state);
+
+      //Replace buttons text with nice for CGG
+      _node_wizard_replace_buttons_labels($form, $form_state);
+
+      //Restore values on form by hand
+      _node_wizard_restore_values($form, $form_state);
+
+      // Better place to set form rebuilding is in validation-function
+      $form['#validate'][] = '_node_wizard_form_validate';
+
+      // Our submit handler should run first to have a posibility to restore value
+      // and gave all other submit-functions correct data
+      $form['#submit'][] = '_node_wizard_form_submit';
+      // We can be last element - all works fine because form values restored before.
+    }
+  }
+}
+
+
+/**
+ * FORM ROUTINE
+ *
+ * The challange here is to keep sbmitted values for each step and keep them
+ * merged before final submit. On final submit, it eats whole array of values as
+ * usual form submit.
+ */
+
+/**
+ * We need to keep full values array from all steps at once. This function gathers
+ * it on #after_build (e.g. after full fom build, but before validation).
+ */
+function _node_wizard_restore_form_state($form, &$form_state) {
+  if (!$form_state['process_input']) {
+   if (!empty($form_state['storage']['values'])) {
+      $form_state['storage']['values'] = array_merge($form_state['storage']['values'], $form_state['values']);
+    }
+    else {
+      $form_state['storage']['values'] = $form_state['values'];
+    }
+    unset($form_state['storage']['values']['form_build_id']);
+
+    //Restore values for submit-functions at every step before form went to validation.
+    if (($form_state['storage']['step'] >= 1 || $form_state['rebuild'] == TRUE) && isset($form_state['storage']['values'])) {
+      $form_state['values'] = array_merge($form_state['values'], $form_state['storage']['values']);
+    }
+  }
+  return $form;
+}
+
+/**
+ * Decide whether the form is ready for saving.
+ */
+function _node_wizard_form_validate($form, &$form_state) {
+  //Restore values for submit-functions at every step.
+  $type = $form_state['values']['type'];
+  $type_steps = variable_get('node_wizard_steps_' . $type, 1);
+  
+  if ($form_state['clicked_button']['#name'] == 'done' || $form_state['clicked_button']['#name'] == 'save_and_done') {
+    $form_state['rebuild'] = NULL;
+    $form_state['redirect'] = NULL;
+  }
+  else {
+    // Store values recieved from user to restore them at last step.
+    if ($form_state['clicked_button']['#array_parents']['0'] == 'node_wizard_navigation' || $form_state['clicked_button']['#name'] == 'next' || $form_state['clicked_button']['#name'] == 'previous') {
+     if (!empty($form_state['storage']['values'])) {
+        $form_state['storage']['values'] = array_merge($form_state['storage']['values'], $form_state['values']);
+      }
+      else {
+        $form_state['storage']['values'] = $form_state['values'];
+      }
+      unset($form_state['storage']['values']['form_build_id']);
+    }
+
+    // Run buttons validators.
+    if ($form_state['clicked_button']['#array_parents']['0'] == 'node_wizard_navigation') {
+      $form_state['rebuild'] = TRUE;
+      $form_state['redirect'] = FALSE;
+      $form_state['storage']['step'] = $form_state['clicked_button']['#name'];
+    }
+    if ($form_state['clicked_button']['#name'] == 'next' || $form_state['clicked_button']['#name'] == 'previous') {
+      // This is not a last step - rebuild form
+      $form_state['rebuild'] = TRUE;
+      $form_state['redirect'] = FALSE;
+      if ($form_state['clicked_button']['#name'] == 'next') {
+        $form_state['storage']['step'] ++;
+      }
+      else {
+        $form_state['storage']['step'] --;
+      }
+    }
+  }
+}
+
+/**
+ * Submit the form.
+ */
+function _node_wizard_form_submit($form, &$form_state) {
+  $type = $form_state['values']['type'];
+  $type_steps = variable_get('node_wizard_steps_' . $type, 1);
+
+  // We decide if form should be rebuild here in _validation)
+  // so all other submit-functions will run too.
+  // This is nessecary to save a menu and uplode module settings.
+  // All submit functions will run anyway so we check steps
+  if ($form_state['storage']['step'] == $type_steps || $form_state['clicked_button']['#name'] == 'save_and_done') {
+    // If user wants to save form at current step and went back to node view page we need to remove.
+    // some variables to not run eternal loop.
+    // Because node_form_submit calls form rebuild and go on..
+    if ($form_state['clicked_button']['#name'] == 'save_and_done') {
+     unset($form['#after_build']);
+     unset($form_state['clicked_button']);
+    }
+
+    // All steps data was restored in _node_wizard_form_validate()
+    // Clear storage bin to avoid automatic form rebuild.
+    // We do it here cause step number is stored under $form_state['storage']].
+    $form_state['storage'] = NULL;
+    // Prevent duble submitting node (we are last submit callback).
+    unset($form['#submit']);
+    // Create a node.
+    // node_form_submit() do redirect to node view page and call all submitters too.
+    node_form_submit($form, $form_state);
+
+    //Let other submitters do their work.
+  }
+}
+
+
+/**
+ * HIDING FIELDS
+ *
+ * We need to hide un-needed fields from current step each form load.
+ */
+
+/**
+ * Hides a extra fields that is not belong to current step
+ * (such as Taxonomy, Title, Body and etc).
+ */
+function _node_wizard_extra_fields_rearrange(&$form, $form_state) {
+  if (!is_array($form) || !is_array($form_state)) {
+    return;
+  }
+  // Get node type and current step.
+  $type = $form['#node']->type;
+  $step = _node_wizard_get_step($form_state);
+
+  $content_type = content_types($type);
+  // Get a list of extra fields.
+  $extra_fields = $content_type['extra'];
+  // If Path module is enabled we add 'path'-item.
+  if (isset($form['path'])) {
+    $extra_fields['path'] = array('empty');
+  }
+
+  foreach ($extra_fields as $field_name => $field_value) {
+    if (!empty($field_value)) {
+      $field_step = variable_get('node_wizard_extra_' . $field_name . '_' . $type, 1);
+      if ($field_step != 0 && $field_step != $step) {
+        unset($form[$field_name]);
+        // We shouldn't unset field, as it will not be possible to restore it's value without complete rebuild.
+      }
+    }
+  }
+}
+
+/**
+ * Hides a fieldgroups that is not belong to current step.
+ */
+function _node_wizard_groupfields_rearrange(&$form, $form_state) {
+  if (!is_array($form) || !is_array($form_state)) {
+    return;
+  }
+  // Get node type and current step
+  $type = $form['#node']->type;
+  $step = _node_wizard_get_step($form_state);
+
+  $groups = fieldgroup_groups($type);
+  foreach ($groups as $group_name => $group_data) {
+    $group_step = $group_data['settings']['node_wizard']['step'];
+    if ($group_step != 0 && $group_step != $step && isset($form[$group_name])) {
+      unset($form[$group_name]);
+    }
+  }
+}
+
+/**
+ * Hides a field that is not belong to current step and any group.
+ */
+function _node_wizard_fields_rearrange(&$form, $form_state) {
+  if (!is_array($form) || !is_array($form_state)) {
+    return;
+  }
+  // Get node type and current step
+  $type = $form['#node']->type;
+  $step = _node_wizard_get_step($form_state);
+
+  foreach ($form['#field_info'] as $field_name => $field_data) {
+    $field_step = $field_data['widget']['node_wizard'];
+
+    if ($field_step != 0 && $field_step != $step && isset($form[$field_data['field_name']])) {
+      unset($form[$field_data['field_name']]);
+    }
+  }
+}
+
+
+
+
+/**
+ * RESTORING FIELD VALUES
+ *
+ * On each step we need to restore previously submitted values from storage.
+ */
+
+/**
+ * Restore node fields which has a tree-like structure of data. Do not restore field Body.
+ */
+function _node_wizard_restore_values(&$form, &$form_state) {
+  //dpm($form_state);
+  $values = $form_state['values'];
+  foreach ($form as $key => &$parent) {
+    if (is_array($parent)) { // && $key != 'menu'
+      if (!empty($parent['#type'])) {
+        if ((!empty($parent['#tree']) && $parent['#tree'])) {
+          $value = $form_state['values'][$key];
+        }
+        else {
+          $value = $form_state['values'];
+        }
+        _node_wizard_restore_values_recursive($key, $parent, $value);
+      }
+      elseif (!empty($parent['body'])) {
+        //This is a Body field
+        $body_fields = array('body', 'teaser_js', 'teaser_include', 'format');
+        foreach ($body_fields as $body_field) {
+          $value = $values[$body_field];
+          if (!empty($value) || $body_field == 'teaser_include') {
+          $parent[$body_field]['#default_value'] = $valudpe;
+          }
+        }
+      }
+    }
+  }
+
+  // Extra care for Hierarchial Select.
+  _node_wizard_restore_hs_content_taxonomy($form, $form_state);
+}
+
+/**
+ * Helper function for _node_wizard_restore_values(). Recurcively restore value for given field.
+ */
+function _node_wizard_restore_values_recursive($key, &$parent, $values) {
+  // Fields inside fieldsets.
+  foreach ($parent as $k => &$child) {
+    if (is_array($child) && isset($child['#type'])) {
+      if (isset($child['#tree']) && $child['#tree'] == TRUE) {
+        $value = $values[$k];
+      }
+      else {
+        if (isset($values[$k])) {
+          $parent[$k]['#default_value'] = $values[$k];
+        }
+        return;
+      }
+      _node_wizard_restore_values_recursive($k, $child, $value);
+    }
+  }
+  // Singular fields like Title.
+  if (isset($values[$key])) {
+    $parent['#default_value'] = $values[$key];
+  }
+}
+
+/**
+ * Submit handler for HS CT field form.
+ * @see hs_content_taxonomy_form_submit()
+ */
+function _node_wizard_restore_hs_content_taxonomy(&$form, &$form_state) {
+  foreach ($form['#field_info'] as $field_name => $field_info) {
+    if ($field_info['widget']['type'] == 'content_taxonomy_hs') {
+      // Change format of values to the one Content Taxonomy expects
+      $group = _fieldgroup_field_get_group($form_state['values']['type'], $field_name);
+      $hs_values = $form_state['values'][$field_name]['tids'];
+      if (is_array($hs_values)) {
+        foreach($hs_values as $delta => $tid) {
+          if ($group) {
+            $form[$group][$field_name]['tids']['#default_value'][$delta] = $tid;
+          }
+          else {
+            $form[$field_name]['tids']['#default_value'][$delta] = $tid;
+          }
+        }
+      }
+      else {
+        if ($group) {
+          $form[$group][$field_name]['tids']['#default_value'] = $hs_values;
+        } else {
+          $form[$field_name]['tids']['#default_value'] = $hs_values;
+        }
+      }
+    }
+  }
+}
+
+
+/**
+ * Create an array that contains all possible steps. Used for select box options.
+ *
+ * @return Array which is ready to use as options in select box widgets.
+ */
+function _node_wizard_get_steps_list($with_every_step_option = TRUE) {
+  static $steps = array();
+  static $steps_with_every_step_option = array();
+
+  if ($with_every_step_option) {
+    if (count($steps_with_every_step_option) < 1) {
+
+      $steps_with_every_step_option = _node_wizard_get_steps_list(FALSE);
+      $steps_with_every_step_option['0'] = t('Every step');
+    }
+    return $steps_with_every_step_option;
+  }
+  else {
+    if (count($steps) < 1) {
+      for ($step = 1; $step <= NODE_WIZARD_MAX_STEPS; $step++) {
+        $steps[$step] = $step;
+      }
+    }
+    return $steps;
+  }
+}
+
+ /**
+  * Determine the current step that the field should be part of in the current
+  * node type. This is used for multi-value fields and multigroups.
+  */
+function _node_wizard_get_field_step($field = '', $type = '') {
+  $step = 1;
+  //If parameters was not set - show 1st step by default.
+  if (!$field || !$type) {
+    return $step;
+  }
+  $group = _fieldgroup_field_get_group($type, $field);
+  $groups = fieldgroup_groups($type);
+  // Verify whether it's a multigroup or a multi-valued field.
+  if ($groups[$field]['settings']['node_wizard']['step']) {
+    $step = $groups[$field]['settings']['node_wizard']['step'];
+  }
+  elseif ($groups[$group]['settings']['node_wizard']['step']) {
+    $step = $groups[$group]['settings']['node_wizard']['step'];
+  }
+  return $step;
+}
+
+/**
+ * Returns step from $form_state array.
+ */
+function _node_wizard_get_step($form_state) {
+  if (!is_array($form_state) && count($form_state) <1) {
+    return NULL;
+  }
+  if (isset($form_state['storage']['step'])) {
+    $step = $form_state['storage']['step'];
+  }
+  else {
+    $step = 1; //Step 1 is a default step.
+  }
+  return $step;
+}
+
+/**
+ * Set given step to $form_state.
+ */
+function _node_wizard_set_next_step(&$form_state) {
+  if ((!is_array($form_state) && count($form_state) <1)) {
+    return;
+  }
+  if (isset($form_state['storage']['step'])) {
+    $form_state['storage']['step'] ++;
+  }
+  else {
+    $form_state['storage']['step'] = 2;
+  }
+}
+
+
+/**
+ * BUTTONS
+ *
+ * Formats buttons to put into the form.
+ */
+
+/**
+ * Adds a buttons to the form.
+ */
+function _node_wizard_add_form_buttons(&$form, $form_state) {
+  if (!is_array($form) || !is_array($form_state)) {
+    return;
+  }
+  //Get node type and current step
+  $type = $form['#node']->type;
+  $step = _node_wizard_get_step($form_state);
+
+  $buttons = _node_wizard_get_buttons_labels($type, $step);
+
+  $weight = 101;
+  foreach ($buttons as $code => $name) {
+    $form['buttons'][$code] = array(
+      '#type'     => 'submit',
+      '#value'    => $name,
+      '#weight'   => $weight,
+      '#name'     => $code,
+    );
+    $weight ++;
+  }
+  //For deal edit form we add a button to Save at every step.
+  if (isset($form['#node']->nid)) {
+    $form['buttons']['save_and_done'] = array(
+      '#type'     => 'submit',
+      '#value'    => t('Save changes'),
+      '#weight'   => $weight,
+      '#name'     => 'save_and_done',
+    );
+  }
+  
+  $form['buttons']['#suffix'] = '<div class="clear-block"></div>';
+
+
+  // Allow user with "toggle node wizard" permissions to toggle between multistep or entire form.
+  $form['buttons']['all'] = array(
+    '#type' => 'item',
+    '#value' => l(t('View') .' ' . ($step == 0 ? t('multistep') : t('entire')) . ' '. t('form'), arg(0) . '/' . arg(1) . '/' . (module_exists('content_profile') && is_content_profile($type) ? 'profile/' . arg(3) : arg(2)) . ($step == 0 ? '/1' : '/0')),
+    '#weight' => 106,
+    '#access' => user_access(NODE_WIZARD_PERM_TOGGLE),
+  );
+  // Remove extra buttons if not wanted.
+  if (variable_get('node_wizard_button_preview_show_' . $type, 0) == 0) {
+    unset($form['buttons']['preview']);
+  }
+  if (module_exists('uc_product') && uc_product_is_product_form($form)) {
+    unset($form['buttons']['save_continue']);
+  }
+  // This is removed in favor of the custom ones above.
+  unset($form['buttons']['submit']);
+}
+
+/**
+ * Returns an array of buttons labels.
+ */
+function _node_wizard_get_buttons_labels($type = '', $step = '') {
+  if (!$type || !is_numeric($step)) {
+    return;
+  }
+
+  // Get default labels.
+  $buttons_codes =  array(
+    'previous'  => t('Previous'),
+    'next'      => t('Next'),
+    'done'      => t('Done'),
+  );
+  //Get maximum step number for node type.
+  $type_steps = variable_get('node_wizard_steps_' . $type, 1);
+
+  // Reorder buttons according to step.
+  if ($step < 2 || $step == 0) {
+    unset($buttons_codes['previous']);
+  }
+  if ($step == $type_steps || $step == 0) {
+    unset($buttons_codes['next']);
+  }
+  if ($step < $type_steps && $step != 0) {
+    unset($buttons_codes['done']);
+  }
+  // Check if fieldset name should be used as label.
+  $use_fieldset_labels = variable_get('node_wizard_use_fieldset_labels_' . $type, 0);
+  if ($use_fieldset_labels) { // && $step
+    // Replace with field group name if any
+    if (isset($buttons_codes['previous'])) {
+      $previous_label = _node_wizard_get_step_group_name($type, ($step - 1));
+      if ($previous_label) {
+        $buttons_codes['previous'] = $previous_label;
+      }
+    }
+    if (isset($buttons_codes['next'])) {
+      $next_label = _node_wizard_get_step_group_name($type, ($step + 1));
+      if ($next_label) {
+        $buttons_codes['next'] = $next_label;
+      }
+    }
+  }
+  else {
+    // Get labels for given type and override defaults.
+    foreach ($buttons_codes as $code => $name) {
+      // Get a saved label and set it as label if defined.
+      $saved_label = variable_get('node_wizard_button_' . $code .'_label_' . $type, $name);
+      $buttons_codes[$code] = ($saved_label ? $saved_label : $name);
+    }
+  }
+  return $buttons_codes;
+}
+
+/**
+ * Return a group name assigned to given step and node type.
+ */
+function _node_wizard_get_step_group_name($type = '', $step = '') {
+  static $step_name;
+
+  $show_steps_numbers = variable_get('node_wizard_show_steps_numbers_' . $type, TRUE);
+  if ($show_steps_numbers) {
+    $step_number = $step . '. ';
+  }
+
+  // Posibly $type can be different from type which data was saved in $step_name.
+  // But I think it can't be in one page query - so relax and have fun.
+  if (!isset($step_name[$step])) {
+    if (!$type) {
+      return '';
+    }
+    // Get all node type groups.
+    $groups = fieldgroup_groups($type);
+    if (count($groups) < 1) {
+      return ''; // No groups.
+    }
+    // Build step names array.
+    foreach ($groups as $group) {
+      // If group name should be used as button label.
+      if ($group['settings']['node_wizard']['button_label']) {
+        if ($show_steps_numbers) {
+          $step_number = $group['settings']['node_wizard']['step'] . '. ';
+        }
+        $step_name[$group['settings']['node_wizard']['step']] = $step_number . $group['label'];
+      }
+    }
+  }
+  return $step_name[$step];
+}
+
+/**
+ * Add a navigation buttons at the form top. This buttons used to go back and show submit history.
+ * @TODO Replace by theming function.
+ */
+function _node_wizard_add_navigation_buttons(&$form, $form_state) {
+  if (!is_array($form) || !is_array($form_state)) {
+    return;
+  }
+  //Get node type and current step
+  $type = $form['#node']->type;
+  $step = _node_wizard_get_step($form_state);
+  //Get maximum step number for node type
+  $type_steps = variable_get('node_wizard_steps_' . $type, 1);
+
+  if (isset($form_state['storage']['submitted_step'])) {
+    $submitted_step = $form_state['storage']['submitted_step'];
+  }
+
+
+  //Choose a maximum step that user can move at
+  if ($form['nid']['#value']) {
+    $max_step = $type_steps;
+  }
+  elseif (isset($submitted_step) && $step < $submitted_step) {
+    $max_step = $submitted_step + 1 ;
+  }
+  else {
+    $max_step = $step + 1;
+  }
+
+  //Build a buttons
+  $form['node_wizard_navigation'] = array(
+    '#type' => 'fieldset',
+    '#weight' => -1000,
+    '#attributes' => array(
+      'id' => 'node-wizard-navigation',
+      'class' => 'wizard'
+    ),
+    '#suffix' => '<div class="clear-block"></div>'
+  );
+  for ($i = 1; $i <= $type_steps; $i++) {
+    $form['node_wizard_navigation']['step_' . $i] = array(
+      '#type'       => 'submit',
+      '#name'       => $i,
+      '#value'      =>  _node_wizard_get_step_group_name($type, $i),
+      '#weight'     => 1000 + $i,
+    );
+    $class = 'wizard-trail-next';
+
+    if (isset($submitted_step) && $i < $submitted_step) {
+      $class = 'wizard-trail-previous';
+    }
+    elseif ($i < $step) {
+      $class = 'wizard-trail-previous';
+    }
+    if ($i == $step) {
+      $class = 'wizard-trail-current';
+      $form['node_wizard_navigation']['#attributes']['class'] .= ' step-'. $i;
+    }
+    
+    if ($i == $type_steps) {
+      $class .= ' step-last';
+    }
+
+    if ($form['nid']['#value']) {
+      if ($i > $step) {
+        $class .= ' wizard-trail-previous';
+      }
+    }
+    else {
+      //Disable buttons for not submitted steps
+      if ($i > $max_step) {
+        $form['node_wizard_navigation']['step_' . $i]['#disabled'] = 'disabled';
+      }
+    }
+    $form['node_wizard_navigation']['step_' . $i]['#prefix'] = '<div class="step-'. $i . ' ' . $class . '">';
+    $form['node_wizard_navigation']['step_' . $i]['#suffix'] = '</div>';
+  }
+}
+
+/**
+ * Set of buttons for OnGreen.
+ */
+function _node_wizard_replace_buttons_labels(&$form, &$form_state) {
+  if (!is_array($form) || !is_array($form_state)) {
+    return;
+  }
+  //Get current step
+  $step = _node_wizard_get_step($form_state);
+
+  switch ($step) {
+    case 4:
+      if (isset($form["buttons"]["previous"])) {
+        $form["buttons"]["previous"]["#value"] = t("« Back to Business Information");
+      }
+      if (isset($form["buttons"]["next"])) {
+        unset($form["buttons"]["next"]);
+      }
+      if (isset($form["buttons"]["done"])) {
+        $form["buttons"]["done"]["#value"] = t("Finish and post your Deal!");
+      }
+      break;
+    case 3:
+      if (isset($form["buttons"]["previous"])) {
+        $form["buttons"]["previous"]["#value"] = t("« Back to Funding & Finance");
+      }
+      if (isset($form["buttons"]["next"])) {
+        $form["buttons"]["next"]["#value"] = t("Proceed to Marketing »");
+      }
+      break;
+    case 2:
+      if (isset($form["buttons"]["previous"])) {
+        $form["buttons"]["previous"]["#value"] = t("« Back to Project Information");
+      }
+      if (isset($form["buttons"]["next"])) {
+        $form["buttons"]["next"]["#value"] = t("Proceed to Business Information »");
+      }
+      break;
+    case 1:
+    default:
+      if (isset($form["buttons"]["next"])) {
+        $form["buttons"]["next"]["#value"] = t("Proceed to Funding & Finance »");
+      }
+      break;
+  }
+
+  unset($form["buttons"]["submit"]);
+  unset($form["buttons"]["delete"]);
+  unset($form["buttons"]["preview"]);
+  unset($form["buttons"]["save"]);
+  unset($form["buttons"]["all"]);
+}
+
+
+
+
+/**
+ * Implementation of hook_form_FORM_ID_alter() for node_type_form.
+ *
+ * This is the form for editing the content type.
+ */
+function node_wizard_form_node_type_form_alter(&$form, &$form_state) {
+  //Add a cool JS effects
+  drupal_add_js(drupal_get_path('module', 'node_wizard') . '/node_wizard.js');
+
+  $type = $form['#node_type']->type;
+  //Build a form
+  $form['node_wizard'] = array(
+    '#type'           => 'fieldset',
+    '#title'          => t('Node Wizard'),
+    '#collapsible'    => TRUE,
+    '#collapsed'      => TRUE,
+    '#weight'         => 2,
+    '#access'         => user_access(NODE_WIZARD_PERM_ADMINISTER),
+  );
+
+  $form['node_wizard']['node_wizard_steps'] = array(
+    '#type'           => 'select',
+    '#title'          => t('Number of steps'),
+    '#options'        => _node_wizard_get_steps_list(FALSE),
+    '#default_value'  => variable_get('node_wizard_steps_' . $type, 1),
+    '#description'    => t('Choose how many steps form should have. "1" is default and shows the whole form.'),
+  );
+
+  // Navigation buttons
+  $form['node_wizard']['buttons'] = array(
+    '#type' => 'fieldset',
+    '#collapsible'    => TRUE,
+    '#collapsed'      => TRUE,
+    '#title' => t('Navigation buttons'),
+    '#description' => t('These settings will change the text displayed on each of the submit buttons on multistep forms.'),
+  );
+
+  $form['node_wizard']['buttons']['node_wizard_button_preview_show'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Show Preview button'),
+    '#default_value' => variable_get('node_wizard_button_preview_show_' . $type, 0),
+  );
+
+
+
+  // Navigation buttons / Button Labels
+  $form['node_wizard']['buttons']['buttons_labels'] = array(
+    '#type' => 'fieldset',
+    '#collapsible'    => FALSE,
+    '#title' => t('Navigation button labels'),
+    '#description' => t('These settings will change the text displayed on each of the submit buttons on multistep forms.'),
+  );
+
+  //Prepare some data
+  $use_fieldset_labels = variable_get('node_wizard_use_fieldset_labels_' . $type, 0);
+  //$buttons_codes = _node_wizard_get_default_buttons_labels();
+
+  $form['node_wizard']['buttons']['buttons_labels']['node_wizard_use_fieldset_labels'] = array(
+    '#type'           => 'checkbox',
+    '#title'          => t('Use fieldset labels as button labels'),
+    '#default_value'  => $use_fieldset_labels,
+    '#description'    => t('If <strong>only one fieldset was assigned to step</strong> and checkbox "Use this group name as a label for buttons" was not checked this one fieldset name will be used as button label.') . '<br />' .
+                         t('If <strong>many fieldsets assigned to step</strong> and no one is selected to be used as label for buttons - first one will be used.'),
+  );
+
+
+  foreach ($buttons_codes as $code => $name) {
+    //Get a saved label
+    $saved_label = variable_get('node_wizard_button_' . $code .'_label_' . $type, $name);
+    $form['node_wizard']['buttons']['buttons_labels']['node_wizard_button_' . $code .'_label'] = array(
+      '#type'           => 'textfield',
+      '#title'          => t('%button name button label', array('%button name' => $name)),
+      '#default_value'  => ($saved_label ? $saved_label : $name),
+      '#disabled'       => (bool)$use_fieldset_labels,
+    );
+  }
+
+  //Design
+  $form['node_wizard']['design'] = array(
+    '#type'           => 'fieldset',
+    '#title'          => t('Design'),
+    '#collapsible'    => TRUE,
+    '#collapsed'      => TRUE,
+    '#description'    => t('These settings will change design.'),
+    '#weight'         => 0,
+  );
+  $form['node_wizard']['design']['node_wizard_show_steps_numbers'] = array(
+    '#type'           => 'checkbox',
+    '#title'          => t('Show step numbers'),
+    '#default_value'  => variable_get('node_wizard_show_steps_numbers_' . $type, TRUE),
+    '#description'    => t('Show step number in navigation block.'),
+    '#weight'         => -10,
+  );
+
+  //Extra Fields
+  $form['node_wizard']['extra_fields'] = array(
+    '#type'         => 'fieldset',
+    '#title'        => t('Extra Fields'),
+    '#description'  => t('Select the steps you want the extra (non-CCK) fields to belong to.'),
+    '#collapsible'  => TRUE,
+    '#collapsed'    => TRUE,
+    '#weight'       => 2,
+  );
+  if (!empty($type)) {
+    $content_type = content_types($type);
+    foreach ($content_type['extra'] as $field_name => $field_value) {
+      if (!empty($field_value)) {
+        if ($field_name == 'title' && (!module_exists('auto_nodetitle')
+        || (module_exists('auto_nodetitle') && auto_nodetitle_get_setting($type) == AUTO_NODETITLE_DISABLED))) {
+
+          $form['node_wizard']['extra_fields']['node_wizard_extra_' . $field_name] = array(
+            '#type'           => 'select',
+            '#title'          => t($field_value['label']),
+            '#default_value'  => variable_get('node_wizard__extra_' . $field_name . '_' . $type, 1),
+            '#options'        => array(0 => t('Every step'), 1 => '1'),
+            '#description'    => t('Setting the Title field in a step other than the first one might create complications due to the possibility of having nodes without title. Enable ' . l('Automatic Nodetitles', 'http://drupal.org/project/auto_nodetitle') . ' for this content type to use this feature.'),
+          );
+        }
+        /*
+        elseif ($field_name == 'taxonomy' && module_exists('taxonomy')) {
+          $vocabularies = taxonomy_get_vocabularies($type);
+          foreach ($vocabularies as $vid => $vocabulary) {
+            $form['node_wizard']['extra_fields']['node_wizard_extra_' . $field_name . '_' . $vid] = array(
+              '#type' => 'select',
+              '#title' => t('Taxonomy - ' . $vocabulary->name),
+              '#default_value' => variable_get('node_wizard_extra_' . $field_name . '_' . $vid . '_' . $type, 1),
+              '#options' => _node_wizard_get_steps_list(),
+              '#description' => t('Select the step the ' . $vocabulary->name . ' field belongs to.'),
+            );
+          }
+        }
+
+        else {
+          $form['node_wizard']['extra_fields']['node_wizard_extra_' . $field_name] = array(
+            '#type' => 'select',
+            '#title' => t($field_value['label']),
+            '#default_value' => variable_get('node_wizard_extra_' . $field_name . '_' . $type, 1),
+            '#options' => _node_wizard_get_steps_list(),
+            '#description' => t('Select the step the ' . $field_value['label'] . ' field belongs to.'),
+          );
+        }
+        */
+        elseif ($field_name == 'body_field') {
+          $form['node_wizard']['extra_fields']['node_wizard_extra_' . $field_name] = array(
+            '#type'           => 'select',
+            '#title'          => t($field_value['label']),
+            '#default_value'  => variable_get('node_wizard_extra_' . $field_name . '_' . $type, 1),
+            '#options'        => _node_wizard_get_steps_list(),
+            '#description'    => t('Select the step the ' . $field_value['label'] . ' field belongs to.'),
+          );
+        }
+      }
+    }
+  }
+}
+
+ /**
+  * Implementation of hook_form_FORM_ID_alter() for fieldgroup_group_edit_form.
+  *
+  * This is the form to create/edit fieldgroup information.
+  */
+function node_wizard_form_fieldgroup_group_edit_form_alter(&$form, &$form_state) {
+  $type = $form['#content_type']['type'];
+  $steps = variable_get('node_wizard_steps_' . $type, 1);
+  drupal_add_js(drupal_get_path('module', 'node_wizard') . '/node_wizard.js');
+
+  // If selected more than one step - we have to add some widgets.
+  if ($steps > 1) {
+    $groups = fieldgroup_groups($type);
+    $group = $groups[$form['group_name']['#default_value']];
+    $form['settings']['node_wizard'] = array(
+      '#type'         => 'fieldset',
+      '#title'        => t('Node Wizard'),
+      '#collapsible'  => FALSE,
+      '#collapsed'    => FALSE,
+    );
+    $form['settings']['node_wizard']['step'] = array(
+      '#type'           => 'select',
+      '#title'          => t('Step'),
+      '#description'    => t('Select which step does this group belong to.'),
+      '#default_value'  => $group['settings']['node_wizard']['step'] ? $group['settings']['node_wizard']['step'] : 0,
+      '#options'        => _node_wizard_get_steps_list(),
+    );
+    $form['settings']['node_wizard']['button_label'] = array(
+      '#type'           => 'checkbox',
+      '#title'          => t('Use this group name as a label for buttons'),
+      '#default_value'  => $group['settings']['node_wizard']['button_label'] ? $group['settings']['node_wizard']['button_label'] : 0,
+    );
+  }
+}
+
+/**
+ * Implementation of hook_widget_settings_alter().
+ * Adds a widget for fields that is not belong any group to have an ability to choose a step.
+ */
+
+/*
+function node_wizard_widget_settings_alter(&$form, $op, $widget) {
+  $type = strtr(arg(3), array('-' => '_'));
+  $field = arg(5);
+  $steps = variable_get('node_wizard_steps_' . $type, 1);
+  // If selected more than one step or if this field is not belongs to any group - we have to add some widgets.
+  if ($steps > 1 || !fieldgroup_get_group($type, $field)) {
+    switch ($op) {
+      case 'form':
+        $form['node_wizard'] = array(
+          '#type'         => 'fieldset',
+          '#title'        => t('Node Wizard'),
+          '#collapsible'  => TRUE,
+          '#collapsed'    => isset($widget['node_wizard']) ? FALSE : TRUE,
+          '#weight'       => 5,
+        );
+        $form['node_wizard']['node_wizard'] = array(
+          '#type'           => 'select',
+          '#title'          => t('Field step'),
+          '#default_value'  => isset($widget['node_wizard']) ? $widget['node_wizard'] : 0,
+          '#options'        => _node_wizard_get_steps_list(),
+          '#description'    => t('Select the step this field belongs to.'),
+        );
+        break;
+      case 'save':
+        $form = array_merge($form, array('node_wizard'));
+        break;
+    }
+  }
+}
+*/
+
+
+/**
+ * Implementation of hook_form_FORM_ID_alter().
+ * Adds a widget for fields that is not belong any group to have an ability to choose a step.
+ *
+ * @param <array> $form
+ * @param <string> $op Current operation
+ * @param <array> $widget
+ */
+function node_wizard_form_content_field_edit_form_alter(&$form, &$form_state) {
+
+//  dpm($form);
+  $field = $form['#field']['field_name'];
+  $type = $form['#field']['type_name'];
+  $steps = variable_get('node_wizard_steps_' . $type, 1);
+  // If selected more than one step or if this field is not belongs to any group - we have to add some widgets.
+  if ($steps > 1 || !fieldgroup_get_group($type, $field)) {
+    $form['widget']['node_wizard'] = array(
+      '#type'         => 'fieldset',
+      '#title'        => t('Node Wizard'),
+      '#collapsible'  => TRUE,
+      '#collapsed'    => isset($widget['node_wizard']) ? FALSE : TRUE,
+      '#weight'       => -5,
+    );
+    $form['widget']['node_wizard']['node_wizard2'] = array(
+      '#type'           => 'select',
+      '#title'          => t('Field step'),
+      '#default_value'  => isset($widget['node_wizard']) ? $widget['node_wizard'] : 0,
+      '#options'        => _node_wizard_get_steps_list(),
+      '#description'    => t('Select the step this field belongs to.'),
+    );
+  }
+}
+
+
