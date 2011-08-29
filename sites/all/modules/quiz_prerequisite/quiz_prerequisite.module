@@ -116,12 +116,25 @@ function quiz_prerequisite_quiz_begin($quiz, $rid) {
     if ($allowed == FALSE) {
       if (PREREQUISITE_URL == TRUE) {
         drupal_set_message(check_plain(PREREQUISITE_MESSAGE));
+        $_SESSION[$quiz->prerequisite_nid] = $quiz->nid;
         drupal_goto('node/' . $quiz->prerequisite_nid .'/take');
       }
       else {
         drupal_goto('quiz-prerequisite-not-met');
       }
     }
+  }
+}
+
+function quiz_prerequisite_quiz_finished($quiz, $score, $rid) {
+  global $user;
+  if (isset($_SESSION[$quiz->nid])) {
+    kpr($quiz);
+    kpr($score);
+    kpr($rid);
+    $previouse_nid = $_SESSION[$quiz->nid];
+    unset($_SESSION[$quiz->nid]);
+    drupal_goto('node/' . $previouse_nid .'/take');
   }
 }
 
