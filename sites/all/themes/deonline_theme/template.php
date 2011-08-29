@@ -71,3 +71,10 @@ function deonline_theme_preprocess_node(&$vars) {
   }
 }
 
+function deonline_theme_preprocess_user_profile(&$vars) {
+  $account = $vars['account'];
+  if (in_array('teacher', $account->roles)) {
+    $vars['template_files'][] = 'user-profile-teacher';
+  }
+}
+
