@@ -128,10 +128,11 @@ function quiz_prerequisite_quiz_begin($quiz, $rid) {
 
 function quiz_prerequisite_quiz_finished($quiz, $score, $rid) {
   global $user;
-  if (isset($_SESSION[$quiz->nid])) {
     kpr($quiz);
     kpr($score);
     kpr($rid);
+  kpr($_SESSION);
+  if (isset($_SESSION[$quiz->nid])) {
     $previouse_nid = $_SESSION[$quiz->nid];
     unset($_SESSION[$quiz->nid]);
     drupal_goto('node/' . $previouse_nid .'/take');
