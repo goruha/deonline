@@ -265,8 +265,8 @@ function meta_quiz_subquiz_take_quiz($meta_quiz, $quiz) {
     $number_of_questions = quiz_get_number_of_questions($quiz->vid);
     $question_number = $number_of_questions - count($_SESSION['quiz_'. $quiz->nid]['quiz_questions']);
     $question_node->question_number = $question_number;
-    $content['dsadsda']['#value'] = '';
-    $content['dsadsda']['#weight'] = -51;
+    $content['steps']['#value'] = views_embed_view('meta_quiz_steps', 'default', $meta_quiz->nid);
+    $content['steps']['#weight'] = -51;
     $content['progress']['#value'] = theme('quiz_progress', $question_number, $number_of_questions, $quiz->allow_jumping, $quiz->time_limit);
     $content['progress']['#weight'] = -50;
     if (count($_SESSION['quiz_'. $quiz->nid]['quiz_questions']) + count($_SESSION['quiz_'. $quiz->nid]['previous_quiz_questions']) > $number_of_questions) {

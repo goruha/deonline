@@ -12,11 +12,11 @@ function feature_deonline_ct_meta_quiz_strongarm() {
   $strongarm->name = 'content_extra_weights_meta_quiz';
   $strongarm->value = array(
     'title' => '-5',
-    'revision_information' => '-1',
+    'revision_information' => '0',
     'author' => '-2',
-    'options' => '0',
+    'options' => '1',
     'menu' => '-3',
-    'path' => '1',
+    'path' => '2',
   );
   $export['content_extra_weights_meta_quiz'] = $strongarm;
 

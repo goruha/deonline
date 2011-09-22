@@ -115,7 +115,7 @@ function feature_deonline_ct_fieldgroup_default_groups() {
         'description' => '',
       ),
       'display' => array(
-        'weight' => '34',
+        'weight' => '35',
         'parent' => '',
         'label' => 'above',
         'teaser' => array(
@@ -124,7 +124,7 @@ function feature_deonline_ct_fieldgroup_default_groups() {
         ),
         'full' => array(
           'format' => 'fieldset',
-          'exclude' => 0,
+          'exclude' => 1,
         ),
         'description' => '',
         '4' => array(

@@ -78,3 +78,10 @@ function deonline_theme_preprocess_user_profile(&$vars) {
   }
 }
 
+function deonline_theme_preprocess_views_view_fields__meta_quiz_steps__default(&$vars) {
+  global $user;
+  $nid = $vars['fields']['field_meta_quiz_quiz_nid']->raw;
+  $quiz = node_load($nid);
+  $quiz_passed = quiz_is_passed($user->uid, $quiz->nid, $quiz->vid);
+  $vars['image'] = $quiz_passed ? $vars['fields']['field_meta_quiz_image_passed_fid']->content : $vars['fields']['field_meta_quiz_image_fid']->content;
+}

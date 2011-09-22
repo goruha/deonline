@@ -928,9 +928,10 @@ function feature_deonline_ct_content_default_fields() {
     'field_name' => 'field_profile_age',
     'type_name' => 'profile',
     'display_settings' => array(
+      'weight' => '34',
+      'parent' => '',
       'label' => array(
         'format' => 'above',
-        'exclude' => 0,
       ),
       'teaser' => array(
         'format' => 'default',
@@ -938,7 +939,7 @@ function feature_deonline_ct_content_default_fields() {
       ),
       'full' => array(
         'format' => 'default',
-        'exclude' => 0,
+        'exclude' => 1,
       ),
       '4' => array(
         'format' => 'default',
@@ -982,17 +983,17 @@ function feature_deonline_ct_content_default_fields() {
     'field_name' => 'field_profile_avatar',
     'type_name' => 'profile',
     'display_settings' => array(
-      'weight' => '33',
+      'weight' => '32',
       'parent' => '',
       'label' => array(
-        'format' => 'above',
+        'format' => 'hidden',
       ),
       'teaser' => array(
         'format' => 'image_plain',
         'exclude' => 0,
       ),
       'full' => array(
-        'format' => 'image_plain',
+        'format' => '135x222_default',
         'exclude' => 0,
       ),
       '4' => array(
@@ -1026,8 +1027,19 @@ function feature_deonline_ct_content_default_fields() {
       'title' => '',
       'custom_title' => 0,
       'title_type' => 'textfield',
-      'default_image' => NULL,
-      'use_default_image' => 0,
+      'default_image' => array(
+        'filename' => 'user_clip_art.png',
+        'filepath' => 'sites/default/files/imagefield_default_images/user_clip_art.png',
+        'filemime' => 'image/png',
+        'source' => 'default_image_upload',
+        'destination' => 'sites/default/files/imagefield_default_images/user_clip_art.png',
+        'filesize' => 37446,
+        'uid' => '1',
+        'status' => 1,
+        'timestamp' => 1314641569,
+        'fid' => '69',
+      ),
+      'use_default_image' => 1,
       'resolution' => '',
       'enforce_ratio' => 0,
       'croparea' => '500x500',
@@ -1056,7 +1068,7 @@ function feature_deonline_ct_content_default_fields() {
       ),
       'full' => array(
         'format' => 'balloon',
-        'exclude' => 0,
+        'exclude' => 1,
       ),
       '4' => array(
         'format' => 'default',
@@ -1094,7 +1106,7 @@ function feature_deonline_ct_content_default_fields() {
     'field_name' => 'field_profile_name',
     'type_name' => 'profile',
     'display_settings' => array(
-      'weight' => '31',
+      'weight' => '33',
       'parent' => '',
       'label' => array(
         'format' => 'above',
@@ -1105,7 +1117,7 @@ function feature_deonline_ct_content_default_fields() {
       ),
       'full' => array(
         'format' => 'default',
-        'exclude' => 0,
+        'exclude' => 1,
       ),
       '4' => array(
         'format' => 'default',

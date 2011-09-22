@@ -201,7 +201,7 @@ function feature_deonline_variables_strongarm() {
   $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
   $strongarm->api_version = 1;
   $strongarm->name = 'ant_pattern_profile';
-  $strongarm->value = 'profile [field_profile_name-formatted] [field_profile_surname-formatted] ';
+  $strongarm->value = '[field_profile_name-formatted]';
   $export['ant_pattern_profile'] = $strongarm;
 
   $strongarm = new stdClass;
@@ -280,6 +280,13 @@ function feature_deonline_variables_strongarm() {
   $strongarm->name = 'ant_php_material_video';
   $strongarm->value = 0;
   $export['ant_php_material_video'] = $strongarm;
+
+  $strongarm = new stdClass;
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
+  $strongarm->name = 'ant_php_meta_quiz';
+  $strongarm->value = 0;
+  $export['ant_php_meta_quiz'] = $strongarm;
 
   $strongarm = new stdClass;
   $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
@@ -817,8 +824,8 @@ function feature_deonline_variables_strongarm() {
     'weight' => '0',
     'user_display' => 'full',
     'edit_link' => 0,
-    'edit_tab' => 'sub',
-    'add_link' => 1,
+    'edit_tab' => 'top',
+    'add_link' => 0,
     'registration_use' => 1,
     'admin_user_create_use' => 1,
     'registration_hide' => array(
@@ -899,6 +906,13 @@ function feature_deonline_variables_strongarm() {
   $strongarm->name = 'content_profile_use_material_video';
   $strongarm->value = 0;
   $export['content_profile_use_material_video'] = $strongarm;
+
+  $strongarm = new stdClass;
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
+  $strongarm->name = 'content_profile_use_meta_quiz';
+  $strongarm->value = 0;
+  $export['content_profile_use_meta_quiz'] = $strongarm;
 
   $strongarm = new stdClass;
   $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
@@ -1002,7 +1016,7 @@ function feature_deonline_variables_strongarm() {
   $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
   $strongarm->api_version = 1;
   $strongarm->name = 'dev_query';
-  $strongarm->value = 0;
+  $strongarm->value = 1;
   $export['dev_query'] = $strongarm;
 
   $strongarm = new stdClass;
@@ -1141,6 +1155,13 @@ function feature_deonline_variables_strongarm() {
   $strongarm = new stdClass;
   $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
   $strongarm->api_version = 1;
+  $strongarm->name = 'form_build_id_meta_quiz';
+  $strongarm->value = 'form-7964b5910f7435491e5716c8a5932941';
+  $export['form_build_id_meta_quiz'] = $strongarm;
+
+  $strongarm = new stdClass;
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
   $strongarm->name = 'form_build_id_page';
   $strongarm->value = 'form-52d4b8331f1d44f4148f6a7916d8c0a5';
   $export['form_build_id_page'] = $strongarm;
@@ -1156,7 +1177,7 @@ function feature_deonline_variables_strongarm() {
   $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
   $strongarm->api_version = 1;
   $strongarm->name = 'form_build_id_profile';
-  $strongarm->value = 'form-42cf74e0ef5ba12af221e0b84cf8e926';
+  $strongarm->value = 'form-75c559e72e1decb37cf9e62a539b8147';
   $export['form_build_id_profile'] = $strongarm;
 
   $strongarm = new stdClass;
@@ -1332,7 +1353,7 @@ function feature_deonline_variables_strongarm() {
   $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
   $strongarm->api_version = 1;
   $strongarm->name = 'imagefield_crop_query_string';
-  $strongarm->value = 1313676918;
+  $strongarm->value = 1315144530;
   $export['imagefield_crop_query_string'] = $strongarm;
 
   $strongarm = new stdClass;
@@ -1511,6 +1532,20 @@ function feature_deonline_variables_strongarm() {
   $strongarm = new stdClass;
   $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
   $strongarm->api_version = 1;
+  $strongarm->name = 'meta_quiz_field_meta_quiz';
+  $strongarm->value = 'field_meta_quiz_quiz';
+  $export['meta_quiz_field_meta_quiz'] = $strongarm;
+
+  $strongarm = new stdClass;
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
+  $strongarm->name = 'meta_quiz_field_meta_quiz_meta_quiz';
+  $strongarm->value = 'field_meta_quiz_quiz';
+  $export['meta_quiz_field_meta_quiz_meta_quiz'] = $strongarm;
+
+  $strongarm = new stdClass;
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
   $strongarm->name = 'more_node_buttons_cancel_book';
   $strongarm->value = '2';
   $export['more_node_buttons_cancel_book'] = $strongarm;
@@ -1570,6 +1605,13 @@ function feature_deonline_variables_strongarm() {
   $strongarm->name = 'more_node_buttons_cancel_material_video';
   $strongarm->value = '2';
   $export['more_node_buttons_cancel_material_video'] = $strongarm;
+
+  $strongarm = new stdClass;
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
+  $strongarm->name = 'more_node_buttons_cancel_meta_quiz';
+  $strongarm->value = '0';
+  $export['more_node_buttons_cancel_meta_quiz'] = $strongarm;
 
   $strongarm = new stdClass;
   $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
@@ -1682,6 +1724,13 @@ function feature_deonline_variables_strongarm() {
   $strongarm->name = 'more_node_buttons_cancel_referer_redirect_material_video';
   $strongarm->value = 1;
   $export['more_node_buttons_cancel_referer_redirect_material_video'] = $strongarm;
+
+  $strongarm = new stdClass;
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
+  $strongarm->name = 'more_node_buttons_cancel_referer_redirect_meta_quiz';
+  $strongarm->value = 0;
+  $export['more_node_buttons_cancel_referer_redirect_meta_quiz'] = $strongarm;
 
   $strongarm = new stdClass;
   $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
@@ -1868,6 +1917,13 @@ function feature_deonline_variables_strongarm() {
   $strongarm = new stdClass;
   $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
   $strongarm->api_version = 1;
+  $strongarm->name = 'more_node_buttons_sac_meta_quiz';
+  $strongarm->value = '0';
+  $export['more_node_buttons_sac_meta_quiz'] = $strongarm;
+
+  $strongarm = new stdClass;
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
   $strongarm->name = 'more_node_buttons_sac_multichoice';
   $strongarm->value = '3';
   $export['more_node_buttons_sac_multichoice'] = $strongarm;
@@ -2015,6 +2071,13 @@ function feature_deonline_variables_strongarm() {
   $strongarm = new stdClass;
   $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
   $strongarm->api_version = 1;
+  $strongarm->name = 'more_node_buttons_sacn_meta_quiz';
+  $strongarm->value = '0';
+  $export['more_node_buttons_sacn_meta_quiz'] = $strongarm;
+
+  $strongarm = new stdClass;
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
   $strongarm->name = 'more_node_buttons_sacn_multichoice';
   $strongarm->value = '4';
   $export['more_node_buttons_sacn_multichoice'] = $strongarm;
@@ -2158,6 +2221,13 @@ function feature_deonline_variables_strongarm() {
   $strongarm->name = 'more_node_buttons_tabcn_material_video';
   $strongarm->value = 1;
   $export['more_node_buttons_tabcn_material_video'] = $strongarm;
+
+  $strongarm = new stdClass;
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
+  $strongarm->name = 'more_node_buttons_tabcn_meta_quiz';
+  $strongarm->value = 0;
+  $export['more_node_buttons_tabcn_meta_quiz'] = $strongarm;
 
   $strongarm = new stdClass;
   $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
@@ -2345,6 +2415,20 @@ function feature_deonline_variables_strongarm() {
   $strongarm = new stdClass;
   $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
   $strongarm->api_version = 1;
+  $strongarm->name = 'node_wizard_button_preview_show_meta_quiz';
+  $strongarm->value = 0;
+  $export['node_wizard_button_preview_show_meta_quiz'] = $strongarm;
+
+  $strongarm = new stdClass;
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
+  $strongarm->name = 'node_wizard_button_preview_show_profile';
+  $strongarm->value = 0;
+  $export['node_wizard_button_preview_show_profile'] = $strongarm;
+
+  $strongarm = new stdClass;
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
   $strongarm->name = 'node_wizard_extra_body_field_course_request';
   $strongarm->value = '1';
   $export['node_wizard_extra_body_field_course_request'] = $strongarm;
@@ -2359,9 +2443,30 @@ function feature_deonline_variables_strongarm() {
   $strongarm = new stdClass;
   $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
   $strongarm->api_version = 1;
+  $strongarm->name = 'node_wizard_extra_title_meta_quiz';
+  $strongarm->value = '1';
+  $export['node_wizard_extra_title_meta_quiz'] = $strongarm;
+
+  $strongarm = new stdClass;
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
   $strongarm->name = 'node_wizard_show_steps_numbers_course_request';
   $strongarm->value = 0;
   $export['node_wizard_show_steps_numbers_course_request'] = $strongarm;
+
+  $strongarm = new stdClass;
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
+  $strongarm->name = 'node_wizard_show_steps_numbers_meta_quiz';
+  $strongarm->value = 1;
+  $export['node_wizard_show_steps_numbers_meta_quiz'] = $strongarm;
+
+  $strongarm = new stdClass;
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
+  $strongarm->name = 'node_wizard_show_steps_numbers_profile';
+  $strongarm->value = 1;
+  $export['node_wizard_show_steps_numbers_profile'] = $strongarm;
 
   $strongarm = new stdClass;
   $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
@@ -2373,9 +2478,37 @@ function feature_deonline_variables_strongarm() {
   $strongarm = new stdClass;
   $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
   $strongarm->api_version = 1;
+  $strongarm->name = 'node_wizard_steps_meta_quiz';
+  $strongarm->value = '1';
+  $export['node_wizard_steps_meta_quiz'] = $strongarm;
+
+  $strongarm = new stdClass;
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
+  $strongarm->name = 'node_wizard_steps_profile';
+  $strongarm->value = '1';
+  $export['node_wizard_steps_profile'] = $strongarm;
+
+  $strongarm = new stdClass;
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
   $strongarm->name = 'node_wizard_use_fieldset_labels_course_request';
   $strongarm->value = 1;
   $export['node_wizard_use_fieldset_labels_course_request'] = $strongarm;
+
+  $strongarm = new stdClass;
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
+  $strongarm->name = 'node_wizard_use_fieldset_labels_meta_quiz';
+  $strongarm->value = 0;
+  $export['node_wizard_use_fieldset_labels_meta_quiz'] = $strongarm;
+
+  $strongarm = new stdClass;
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
+  $strongarm->name = 'node_wizard_use_fieldset_labels_profile';
+  $strongarm->value = 0;
+  $export['node_wizard_use_fieldset_labels_profile'] = $strongarm;
 
   $strongarm = new stdClass;
   $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
@@ -2539,6 +2672,11 @@ function feature_deonline_variables_strongarm() {
       'grant_delete' => 1,
     ),
     'course_request' => array(
+      'grant_view' => 1,
+      'grant_update' => 1,
+      'grant_delete' => 1,
+    ),
+    'meta_quiz' => array(
       'grant_view' => 1,
       'grant_update' => 1,
       'grant_delete' => 1,
@@ -2827,6 +2965,28 @@ function feature_deonline_variables_strongarm() {
     ),
   );
   $export['nodeaccess_material_video'] = $strongarm;
+
+  $strongarm = new stdClass;
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
+  $strongarm->name = 'nodeaccess_meta_quiz';
+  $strongarm->value = array(
+    0 => array(
+      'gid' => 1,
+      'realm' => 'nodeaccess_rid',
+      'grant_view' => 1,
+      'grant_update' => 0,
+      'grant_delete' => 0,
+    ),
+    1 => array(
+      'gid' => 2,
+      'realm' => 'nodeaccess_rid',
+      'grant_view' => 1,
+      'grant_update' => 0,
+      'grant_delete' => 0,
+    ),
+  );
+  $export['nodeaccess_meta_quiz'] = $strongarm;
 
   $strongarm = new stdClass;
   $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
@@ -3375,6 +3535,34 @@ You can access the result here !url
   $strongarm = new stdClass;
   $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
   $strongarm->api_version = 1;
+  $strongarm->name = 'show_diff_inline_meta_quiz';
+  $strongarm->value = 0;
+  $export['show_diff_inline_meta_quiz'] = $strongarm;
+
+  $strongarm = new stdClass;
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
+  $strongarm->name = 'show_diff_inline_profile';
+  $strongarm->value = 0;
+  $export['show_diff_inline_profile'] = $strongarm;
+
+  $strongarm = new stdClass;
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
+  $strongarm->name = 'show_preview_changes_meta_quiz';
+  $strongarm->value = 1;
+  $export['show_preview_changes_meta_quiz'] = $strongarm;
+
+  $strongarm = new stdClass;
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
+  $strongarm->name = 'show_preview_changes_profile';
+  $strongarm->value = 1;
+  $export['show_preview_changes_profile'] = $strongarm;
+
+  $strongarm = new stdClass;
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
   $strongarm->name = 'site_403';
   $strongarm->value = '';
   $export['site_403'] = $strongarm;
@@ -3671,6 +3859,7 @@ You can access the result here !url
       'page' => array(),
       'program_types' => array(),
       'course_request' => array(),
+      'profile' => array(),
     ),
     'panels' => array(
       'display-1-region-left' => array(),
@@ -3755,6 +3944,7 @@ You can access the result here !url
       'page' => array(),
       'program_types' => array(),
       'course_request' => array(),
+      'profile' => array(),
     ),
     'panels' => array(
       'display-1-region-left' => array(
@@ -3912,6 +4102,18 @@ You can access the result here !url
         'link-color' => '',
         'grid-width' => array(),
         'fusion-content-alignment' => 'fusion-center-content',
+        'fusion-multicol' => '',
+        'fusion-list-styles' => array(),
+        'fusion-float-imagefield' => '',
+      ),
+      'view-meta_quiz_steps-display-default' => array(
+        'options' => array(),
+        'background-color' => '',
+        'header-background' => '',
+        'title-color' => '',
+        'link-color' => '',
+        'grid-width' => array(),
+        'fusion-content-alignment' => '',
         'fusion-multicol' => '',
         'fusion-list-styles' => array(),
         'fusion-float-imagefield' => '',
@@ -4166,6 +4368,7 @@ You can access the result here !url
       'page' => array(),
       'program_types' => array(),
       'course_request' => array(),
+      'profile' => array(),
     ),
     'panels' => array(
       'display-1-region-left' => array(),
@@ -4283,6 +4486,7 @@ You can access the result here !url
       'page' => array(),
       'program_types' => array(),
       'course_request' => array(),
+      'profile' => array(),
     ),
     'panels' => array(
       'display-1-region-left' => array(),
@@ -4499,6 +4703,15 @@ You can access the result here !url
   $strongarm = new stdClass;
   $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
   $strongarm->api_version = 1;
+  $strongarm->name = 'skinr_settings_meta_quiz';
+  $strongarm->value = array(
+    0 => 'node_group',
+  );
+  $export['skinr_settings_meta_quiz'] = $strongarm;
+
+  $strongarm = new stdClass;
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
   $strongarm->name = 'skinr_settings_page';
   $strongarm->value = array(
     0 => 'node_group',
@@ -4519,8 +4732,7 @@ You can access the result here !url
   $strongarm->api_version = 1;
   $strongarm->name = 'skinr_settings_profile';
   $strongarm->value = array(
-    0 => 'comment_group',
-    1 => 'node_group',
+    0 => 'node_group',
   );
   $export['skinr_settings_profile'] = $strongarm;
 
@@ -5440,6 +5652,20 @@ gif image/gif';
   $strongarm = new stdClass;
   $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
   $strongarm->api_version = 1;
+  $strongarm->name = 'unique_field_comp_meta_quiz';
+  $strongarm->value = 'each';
+  $export['unique_field_comp_meta_quiz'] = $strongarm;
+
+  $strongarm = new stdClass;
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
+  $strongarm->name = 'unique_field_comp_profile';
+  $strongarm->value = 'each';
+  $export['unique_field_comp_profile'] = $strongarm;
+
+  $strongarm = new stdClass;
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
   $strongarm->name = 'unique_field_comp_program_types';
   $strongarm->value = 'each';
   $export['unique_field_comp_program_types'] = $strongarm;
@@ -5464,6 +5690,20 @@ gif image/gif';
   $strongarm->name = 'unique_field_fields_long_answer';
   $strongarm->value = array();
   $export['unique_field_fields_long_answer'] = $strongarm;
+
+  $strongarm = new stdClass;
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
+  $strongarm->name = 'unique_field_fields_meta_quiz';
+  $strongarm->value = array();
+  $export['unique_field_fields_meta_quiz'] = $strongarm;
+
+  $strongarm = new stdClass;
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
+  $strongarm->name = 'unique_field_fields_profile';
+  $strongarm->value = array();
+  $export['unique_field_fields_profile'] = $strongarm;
 
   $strongarm = new stdClass;
   $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
@@ -5498,6 +5738,20 @@ gif image/gif';
   $strongarm = new stdClass;
   $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
   $strongarm->api_version = 1;
+  $strongarm->name = 'unique_field_scope_meta_quiz';
+  $strongarm->value = 'type';
+  $export['unique_field_scope_meta_quiz'] = $strongarm;
+
+  $strongarm = new stdClass;
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
+  $strongarm->name = 'unique_field_scope_profile';
+  $strongarm->value = 'type';
+  $export['unique_field_scope_profile'] = $strongarm;
+
+  $strongarm = new stdClass;
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
   $strongarm->name = 'unique_field_scope_program_types';
   $strongarm->value = 'node';
   $export['unique_field_scope_program_types'] = $strongarm;
@@ -5522,6 +5776,20 @@ gif image/gif';
   $strongarm->name = 'unique_field_show_matches_long_answer';
   $strongarm->value = array();
   $export['unique_field_show_matches_long_answer'] = $strongarm;
+
+  $strongarm = new stdClass;
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
+  $strongarm->name = 'unique_field_show_matches_meta_quiz';
+  $strongarm->value = array();
+  $export['unique_field_show_matches_meta_quiz'] = $strongarm;
+
+  $strongarm = new stdClass;
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
+  $strongarm->name = 'unique_field_show_matches_profile';
+  $strongarm->value = array();
+  $export['unique_field_show_matches_profile'] = $strongarm;
 
   $strongarm = new stdClass;
   $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
