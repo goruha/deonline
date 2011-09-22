@@ -1569,6 +1569,7 @@ function quiz_get_score_data($nids, $uid, $include_num_questions = FALSE) {
           ON n.nid = rm.nid AND r.score = rm.highest_score
           WHERE n.nid in ('. implode(', ', $nids) .')
           ';
+
   $res = db_query($sql, $uid);
   while ($res_o = db_fetch_object($res)) {
     if (!$include_num_questions) {

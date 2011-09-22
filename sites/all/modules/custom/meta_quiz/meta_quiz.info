@@ -1,0 +1,6 @@
+name = Meta quiz
+description = Provide meta quiz.
+dependencies[] = nodereference
+dependencies[] = quiz
+package = CCK
+core = 6.x

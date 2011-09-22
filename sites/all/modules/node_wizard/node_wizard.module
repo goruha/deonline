@@ -344,7 +344,7 @@ function _node_wizard_restore_values(&$form, &$form_state) {
         foreach ($body_fields as $body_field) {
           $value = $values[$body_field];
           if (!empty($value) || $body_field == 'teaser_include') {
-          $parent[$body_field]['#default_value'] = $valudpe;
+          $parent[$body_field]['#default_value'] = $value;
           }
         }
       }
@@ -846,7 +846,7 @@ function node_wizard_form_node_type_form_alter(&$form, &$form_state) {
   );
 
 
-  foreach ($buttons_codes as $code => $name) {
+/*  foreach ($buttons_codes as $code => $name) {
     //Get a saved label
     $saved_label = variable_get('node_wizard_button_' . $code .'_label_' . $type, $name);
     $form['node_wizard']['buttons']['buttons_labels']['node_wizard_button_' . $code .'_label'] = array(
@@ -855,7 +855,7 @@ function node_wizard_form_node_type_form_alter(&$form, &$form_state) {
       '#default_value'  => ($saved_label ? $saved_label : $name),
       '#disabled'       => (bool)$use_fieldset_labels,
     );
-  }
+  }*/
 
   //Design
   $form['node_wizard']['design'] = array(
