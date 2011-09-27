@@ -206,6 +206,7 @@ function meta_quiz_subquiz_take_quiz($meta_quiz, $quiz) {
       drupal_goto('node/'. $meta_quiz->nid .'/take', array('quizkey' => md5(mt_rand() . time())));
     }
   }
+
   // Check for a skip.
   if (($_POST['op'] == t('Skip') || $_POST['op'] == t('Skip and finish')) && $allow_skipping) {
     if (!isset($_SESSION['quiz_'. $quiz->nid]['result_id'])) {
@@ -236,6 +237,7 @@ function meta_quiz_subquiz_take_quiz($meta_quiz, $quiz) {
     }
   }
   $show_validation_message = FALSE;
+
   // If this quiz is in progress, load the next questions and return it via the theme.
   if (!empty($_SESSION['quiz_'. $quiz->nid]['quiz_questions']) || is_string($q_passed_validation)) {
     // If we got no error when validating the question
@@ -265,7 +267,7 @@ function meta_quiz_subquiz_take_quiz($meta_quiz, $quiz) {
     $number_of_questions = quiz_get_number_of_questions($quiz->vid);
     $question_number = $number_of_questions - count($_SESSION['quiz_'. $quiz->nid]['quiz_questions']);
     $question_node->question_number = $question_number;
-    $content['steps']['#value'] = views_embed_view('meta_quiz_steps', 'default', $meta_quiz->nid);
+    $content['steps']['#value'] = views_embed_view('meta_quiz_steps', 'default', $meta_quiz->nid, $quiz->nid);
     $content['steps']['#weight'] = -51;
     $content['progress']['#value'] = theme('quiz_progress', $question_number, $number_of_questions, $quiz->allow_jumping, $quiz->time_limit);
     $content['progress']['#weight'] = -50;
@@ -340,6 +342,7 @@ function meta_quiz_subquiz_take_quiz($meta_quiz, $quiz) {
   else {
     $quiz_end = TRUE;
   }
+
   // If we're at the end of the quiz.
   if (!empty($quiz_end)) {
     // IMPORTANT: Because of a bug _quiz_get_answers always have to be called before quiz_end_scoring... :/

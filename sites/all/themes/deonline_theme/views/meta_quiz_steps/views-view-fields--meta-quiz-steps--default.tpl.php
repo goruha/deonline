@@ -19,7 +19,7 @@
  * @ingroup views_templates
  */
 ?>
-<div class="grid16-3 nested row">
+<div class="grid16-3 nested row <?php print $current; ?> ">
   <div>
     <?php print $image; ?>
   </div>

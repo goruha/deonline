@@ -134,3 +134,7 @@ html.js .fusion-horiz-login#block-user-0 #user-login-form label {
   color: black;
   top: 13px;
 }
+
+.metaquiz-active-quiz {
+  border: 1px red solid;
+}
