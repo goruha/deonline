@@ -1,0 +1,146 @@
+diff --git a/sites/all/modules/cck/modules/content_multigroup/content_multigroup.module b/sites/all/modules/cck/modules/content_multigroup/content_multigroup.module
+index 36513b3..24db771 100644
+--- a/sites/all/modules/cck/modules/content_multigroup/content_multigroup.module
++++ b/sites/all/modules/cck/modules/content_multigroup/content_multigroup.module
+@@ -193,3 +193,60 @@ function content_multigroup_fieldgroup_view(&$node, &$element, $group, $context)
+     _content_multigroup_fieldgroup_view($node, $element, $group, $context);
+   }
+ }
++
++function content_multigroup_displays() {
++  $displays = array();
++  foreach (module_implements('display_info') as $module) {
++    if ($module_displays = module_invoke($module, 'display_info')) {
++      $displays = array_merge($displays, $module_displays);
++    }
++  }
++  return $displays;
++}
++
++function content_multigroup_display_info() {
++  return array(
++    'simple' => array(
++      'title' => t('Simple'),
++      'theme' => 'content_multigroup_display_simple',
++      'multiple' => CONTENT_HANDLE_CORE,
++    ),
++    'fieldset' => array(
++      'title' => t('Fieldset'),
++      'theme' => 'content_multigroup_display_fieldset',
++      'multiple' => CONTENT_HANDLE_CORE,
++    ),
++    'fieldset_collapsible' => array(
++      'title' => t('Fieldset - collapsible'),
++      'theme' => 'content_multigroup_display_fieldset',
++      'multiple' => CONTENT_HANDLE_CORE,
++    ),
++    'fieldset_collapsed' => array(
++      'title' => t('Fieldset - collapsed'),
++      'theme' => 'content_multigroup_display_fieldset',
++      'multiple' => CONTENT_HANDLE_CORE,
++    ),
++    'hr' => array(
++      'title' => t('Horizontal line'),
++      'theme' => 'content_multigroup_display_hr',
++      'multiple' => CONTENT_HANDLE_CORE,
++    ),
++    'table-single' => array(
++      'title' => t('Table - Single column'),
++      'theme' => 'content_multigroup_display_table_single',
++      'multiple' => CONTENT_HANDLE_MODULE,
++      'class' => 'content-multigroup-display-table-single-column',
++    ),
++    'table-multiple' => array(
++      'title' => t('Table - Multiple columns'),
++      'theme' => 'content_multigroup_display_table_multiple',
++      'multiple' => CONTENT_HANDLE_MODULE,
++      'class' => 'content-multigroup-display-table-multiple-columns',
++    ),
++    'ul' => array(
++      'title' => t('Unordered List'),
++      'theme' => 'content_multigroup_display_ul',
++      'multiple' => CONTENT_HANDLE_MODULE,
++    ),
++  );
++}
+diff --git a/sites/all/modules/cck/modules/content_multigroup/content_multigroup.node_view.inc b/sites/all/modules/cck/modules/content_multigroup/content_multigroup.node_view.inc
+index 5e3627c..5db9539 100644
+--- a/sites/all/modules/cck/modules/content_multigroup/content_multigroup.node_view.inc
++++ b/sites/all/modules/cck/modules/content_multigroup/content_multigroup.node_view.inc
+@@ -80,41 +80,16 @@ function _content_multigroup_fieldgroup_view(&$node, &$element, $group, $context
+       }
+     }
+ 
+-    switch ($subgroup_format) {
+-      case 'simple':
+-        $element['#attributes']['class'] = $group_class;
+-        $element[$delta]['#theme'] = 'content_multigroup_display_simple';
+-        $element[$delta]['#fields'] = $group_fields;
+-        break;
+-      case 'fieldset_collapsed':
+-        $element[$delta]['#collapsed'] = TRUE;
+-      case 'fieldset_collapsible':
+-        $element[$delta]['#collapsible'] = TRUE;
+-      case 'fieldset':
+-        $element['#attributes']['class'] = $group_class;
+-        $element[$delta]['#type'] = 'content_multigroup_display_fieldset';
+-        $element[$delta]['#fields'] = $group_fields;
+-        break;
+-      case 'hr':
+-        $element['#attributes']['class'] = $group_class;
+-        $element[$delta]['#theme'] = 'content_multigroup_display_hr';
+-        $element[$delta]['#fields'] = $group_fields;
+-        break;
+-      case 'table-single':
+-        $element['#theme'] = 'content_multigroup_display_table_single';
+-        $element['#attributes']['class'] = $group_class .' content-multigroup-display-table-single-column';
+-        $element['#fields'] = $group_fields;
+-        break;
+-      case 'table-multiple':
+-        $element['#theme'] = 'content_multigroup_display_table_multiple';
+-        $element['#attributes']['class'] = $group_class .' content-multigroup-display-table-multiple-columns';
+-        $element['#fields'] = $group_fields;
+-        break;
+-      case 'ul':
+-        $element['#theme'] = 'content_multigroup_display_ul';
+-        $element['#attributes']['class'] = $group_class;
+-        $element['#fields'] = $group_fields;
+-        break;
++    $displays = content_multigroup_displays();
++    $info = $displays[$subgroup_format];
++    $element['#attributes']['class'] = $group_class .' '. $info['class'];
++    if ($info['multiple'] == CONTENT_HANDLE_CORE) {
++      $element[$delta]['#theme'] = $info['theme'];
++      $element[$delta]['#fields'] = $group_fields;
++    }
++    else {
++      $element['#theme'] = $info['theme'];
++      $element['#fields'] = $group_fields;
+     }
+   }
+ 
+diff --git a/sites/all/modules/cck/modules/content_multigroup/panels/content_types/content_multigroup.inc b/sites/all/modules/cck/modules/content_multigroup/panels/content_types/content_multigroup.inc
+index d1e8eef..bafe94c 100644
+--- a/sites/all/modules/cck/modules/content_multigroup/panels/content_types/content_multigroup.inc
++++ b/sites/all/modules/cck/modules/content_multigroup/panels/content_types/content_multigroup.inc
+@@ -122,15 +122,11 @@ function content_multigroup_content_multigroup_content_type_edit_form(&$form, &$
+     '#description' => t('This option allows you to configure the field group format.'),
+   );
+ 
+-  $subgroup_options = array(
+-    'simple' => t('Simple'),
+-    'fieldset' => t('Fieldset'),
+-    'fieldset_collapsible' => t('Fieldset - collapsible'),
+-    'fieldset_collapsed' => t('Fieldset - collapsed'),
+-    'hr' => t('Horizontal line'),
+-    'table-single' => t('Table - Single column'),
+-    'table-multiple' => t('Table - Multiple columns'),
+-  );
++  $displays = content_multigroup_displays();
++  foreach($displays as $name => $info) {
++    $subgroup_options[$name] = $info['title'];
++  }
++
+   $form['subgroup'] = array(
+     '#type' => 'select',
+     '#title' => t('Subgroup format'),
