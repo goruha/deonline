@@ -80,41 +80,16 @@ function _content_multigroup_fieldgroup_view(&$node, &$element, $group, $context
       }
     }
 
-    switch ($subgroup_format) {
-      case 'simple':
-        $element['#attributes']['class'] = $group_class;
-        $element[$delta]['#theme'] = 'content_multigroup_display_simple';
-        $element[$delta]['#fields'] = $group_fields;
-        break;
-      case 'fieldset_collapsed':
-        $element[$delta]['#collapsed'] = TRUE;
-      case 'fieldset_collapsible':
-        $element[$delta]['#collapsible'] = TRUE;
-      case 'fieldset':
-        $element['#attributes']['class'] = $group_class;
-        $element[$delta]['#type'] = 'content_multigroup_display_fieldset';
-        $element[$delta]['#fields'] = $group_fields;
-        break;
-      case 'hr':
-        $element['#attributes']['class'] = $group_class;
-        $element[$delta]['#theme'] = 'content_multigroup_display_hr';
-        $element[$delta]['#fields'] = $group_fields;
-        break;
-      case 'table-single':
-        $element['#theme'] = 'content_multigroup_display_table_single';
-        $element['#attributes']['class'] = $group_class .' content-multigroup-display-table-single-column';
-        $element['#fields'] = $group_fields;
-        break;
-      case 'table-multiple':
-        $element['#theme'] = 'content_multigroup_display_table_multiple';
-        $element['#attributes']['class'] = $group_class .' content-multigroup-display-table-multiple-columns';
-        $element['#fields'] = $group_fields;
-        break;
-      case 'ul':
-        $element['#theme'] = 'content_multigroup_display_ul';
-        $element['#attributes']['class'] = $group_class;
-        $element['#fields'] = $group_fields;
-        break;
+    $displays = content_multigroup_displays();
+    $info = $displays[$subgroup_format];
+    $element['#attributes']['class'] = $group_class .' '. $info['class'];
+    if ($info['multiple'] == CONTENT_HANDLE_CORE) {
+      $element[$delta]['#theme'] = $info['theme'];
+      $element[$delta]['#fields'] = $group_fields;
+    }
+    else {
+      $element['#theme'] = $info['theme'];
+      $element['#fields'] = $group_fields;
     }
   }
 
