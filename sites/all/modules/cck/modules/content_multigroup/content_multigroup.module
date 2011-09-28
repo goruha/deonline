@@ -193,3 +193,60 @@ function content_multigroup_fieldgroup_view(&$node, &$element, $group, $context)
     _content_multigroup_fieldgroup_view($node, $element, $group, $context);
   }
 }
+
+function content_multigroup_displays() {
+  $displays = array();
+  foreach (module_implements('display_info') as $module) {
+    if ($module_displays = module_invoke($module, 'display_info')) {
+      $displays = array_merge($displays, $module_displays);
+    }
+  }
+  return $displays;
+}
+
+function content_multigroup_display_info() {
+  return array(
+    'simple' => array(
+      'title' => t('Simple'),
+      'theme' => 'content_multigroup_display_simple',
+      'multiple' => CONTENT_HANDLE_CORE,
+    ),
+    'fieldset' => array(
+      'title' => t('Fieldset'),
+      'theme' => 'content_multigroup_display_fieldset',
+      'multiple' => CONTENT_HANDLE_CORE,
+    ),
+    'fieldset_collapsible' => array(
+      'title' => t('Fieldset - collapsible'),
+      'theme' => 'content_multigroup_display_fieldset',
+      'multiple' => CONTENT_HANDLE_CORE,
+    ),
+    'fieldset_collapsed' => array(
+      'title' => t('Fieldset - collapsed'),
+      'theme' => 'content_multigroup_display_fieldset',
+      'multiple' => CONTENT_HANDLE_CORE,
+    ),
+    'hr' => array(
+      'title' => t('Horizontal line'),
+      'theme' => 'content_multigroup_display_hr',
+      'multiple' => CONTENT_HANDLE_CORE,
+    ),
+    'table-single' => array(
+      'title' => t('Table - Single column'),
+      'theme' => 'content_multigroup_display_table_single',
+      'multiple' => CONTENT_HANDLE_MODULE,
+      'class' => 'content-multigroup-display-table-single-column',
+    ),
+    'table-multiple' => array(
+      'title' => t('Table - Multiple columns'),
+      'theme' => 'content_multigroup_display_table_multiple',
+      'multiple' => CONTENT_HANDLE_MODULE,
+      'class' => 'content-multigroup-display-table-multiple-columns',
+    ),
+    'ul' => array(
+      'title' => t('Unordered List'),
+      'theme' => 'content_multigroup_display_ul',
+      'multiple' => CONTENT_HANDLE_MODULE,
+    ),
+  );
+}
